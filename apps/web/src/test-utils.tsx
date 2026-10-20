@@ -31,8 +31,8 @@ export const YO = {
   organizaciones: [{ id: '11111111-1111-4111-8111-111111111111', nombre: 'Empresa Demo', nit: '900123456', roles: ['admin', 'lider_pesv'] }],
 };
 
-export function renderizar(elemento: ReactNode, ruta = '/') {
-  const router = createMemoryRouter([{ path: '*', element: elemento }], { initialEntries: [ruta] });
+export function renderizar(elemento: ReactNode, ruta = '/', patron = '*') {
+  const router = createMemoryRouter([{ path: patron, element: elemento }], { initialEntries: [ruta] });
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <ProveedorSesion>

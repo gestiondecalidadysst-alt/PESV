@@ -1,5 +1,13 @@
 import { Module } from '@nestjs/common';
+import { AccionesModule } from './acciones/acciones.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { ComiteModule } from './comite/comite.module.js';
+import { DesplazamientosModule } from './desplazamientos/desplazamientos.module.js';
+import { MantenimientoModule } from './mantenimiento/mantenimiento.module.js';
+import { PlanificacionModule } from './planificacion/planificacion.module.js';
+import { SiniestrosModule } from './siniestros/siniestros.module.js';
+import { TareasModule } from './tareas/tareas.module.js';
+import { VigiaModule } from './vigia/vigia.module.js';
 import { CatalogController } from './catalog/catalog.controller.js';
 import { ClassificationController } from './classification/classification.controller.js';
 import { DatabaseModule } from './db/database.module.js';
@@ -27,6 +35,14 @@ import { TableroModule } from './tablero/tablero.module.js';
     InspeccionesModule,
     TableroModule,
     IaModule,
+    MantenimientoModule,
+    AccionesModule,
+    SiniestrosModule,
+    ComiteModule,
+    PlanificacionModule,
+    DesplazamientosModule,
+    VigiaModule,
+    TareasModule,
   ],
   controllers: [HealthController, CatalogController, ClassificationController],
 })

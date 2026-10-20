@@ -37,25 +37,25 @@ regla ya está implementada.
 | Id | Regla | Estado |
 | --- | --- | --- |
 | RN-14 | Un preoperacional con falla crítica deja el vehículo "no apto" hasta que mantenimiento cierre la falla, y dispara una alerta inmediata. | Implementada |
-| RN-15 | No se asigna un desplazamiento a un conductor con licencia vencida ni a un vehículo con SOAT o revisión técnico-mecánica vencidos. Alertas a los 30, 15 y 5 días. | Alertas implementadas; el bloqueo llega con desplazamientos (Fase 2) |
-| RN-16 | Todo hallazgo de inspección genera una orden de mantenimiento. | Fase 2 |
-| RN-17 | El mantenimiento preventivo se programa por kilometraje o por tiempo, lo que ocurra primero, según el tipo de vehículo. | Fase 2 |
-| RN-18 | Si la flota supera 10 vehículos, los soportes de inspección y mantenimiento se toman sobre una muestra del 10 %. **(norma)** | Fase 2 |
+| RN-15 | No se asigna un desplazamiento a un conductor con licencia vencida ni a un vehículo con SOAT o revisión técnico-mecánica vencidos. Alertas a los 30, 15 y 5 días. | Implementada (el registro del viaje responde 422 con los impedimentos) |
+| RN-16 | Todo hallazgo de inspección genera una orden de mantenimiento. | Implementada (orden correctiva automática por cada falla) |
+| RN-17 | El mantenimiento preventivo se programa por kilometraje o por tiempo, lo que ocurra primero, según el tipo de vehículo. | Implementada |
+| RN-18 | Si la flota supera 10 vehículos, los soportes de inspección y mantenimiento se toman sobre una muestra del 10 %. **(norma)** | Implementada (formulario D de VIGIA 2) |
 
 ## Siniestros y comité
 
 | Id | Regla | Estado |
 | --- | --- | --- |
-| RN-19 | Todo siniestro exige los datos mínimos del registro oficial: fecha, nivel de pérdida, personas por nivel, placa, conductor con cédula, número de IPAT y autoridad. **(norma)** | Fase 2 |
-| RN-20 | En estándar y avanzado, cada siniestro abre una investigación interna y queda pendiente de revisión por el comité. **(norma)** | Fase 2 |
-| RN-21 | Un acta del comité es válida solo con quórum y firmas. Cada compromiso tiene responsable y fecha. | Fase 2 |
+| RN-19 | Todo siniestro exige los datos mínimos del registro oficial: fecha, nivel de pérdida, personas por nivel, placa, conductor con cédula, número de IPAT y autoridad. **(norma)** | Implementada (IPAT y autoridad se pueden completar después; VIGIA 2 avisa si faltan) |
+| RN-20 | En estándar y avanzado, cada siniestro abre una investigación interna y queda pendiente de revisión por el comité. **(norma)** | Implementada |
+| RN-21 | Un acta del comité es válida solo con quórum y firmas. Cada compromiso tiene responsable y fecha. | Implementada (cierre exige quórum; firma con contraseña y huella SHA-256 del PDF) |
 
 ## Reporte a VIGIA 2
 
 | Id | Regla | Estado |
 | --- | --- | --- |
-| RN-22 | Periodicidad: Siniestros y Administrativo trimestral (Siniestros se carga en abril, julio, octubre y enero); Funcionamiento y Vehículos mensual. **(norma)** | Fase 2 |
-| RN-23 | Antes de generar un formulario se validan los campos obligatorios y se avisa lo que falta antes del plazo. | Fase 2 |
+| RN-22 | Periodicidad: Siniestros y Administrativo trimestral (Siniestros se carga en abril, julio, octubre y enero); Funcionamiento y Vehículos mensual. **(norma)** | Implementada |
+| RN-23 | Antes de generar un formulario se validan los campos obligatorios y se avisa lo que falta antes del plazo. | Implementada (evento `vigia.plazo` 7 días antes) |
 | RN-24 | Los soportes se entregan en PDF de máximo 15 MB y sin caracteres especiales en el nombre; la app los renombra y valida. **(norma)** | Implementada en evidencias |
 
 ## Cuentas, suscripción y datos

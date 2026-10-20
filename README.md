@@ -4,8 +4,9 @@ Plataforma SaaS para gestionar el Plan Estratégico de Seguridad Vial (Resoluci�
 organizaciones colombianas de cualquier misionalidad y tamaño, con inteligencia artificial elegida por cada cliente
 e integración con n8n.
 
-> Estado: **Fase 1 completa** (MVP). Cuentas y roles, evidencias por paso, flota y conductores, preoperacional
-> móvil sin conexión, tablero, IA elegida por el cliente e integración con n8n. Ver [Hoja de ruta](#hoja-de-ruta).
+> Estado: **Fase 2 completa**. Sobre el MVP (cuentas y roles, evidencias, flota, preoperacional sin conexión, IA
+> elegida por el cliente, n8n) se suman mantenimiento, siniestros con investigación, comité con acta en vivo y firmas,
+> planificación, desplazamientos y formularios de VIGIA 2. Ver [Hoja de ruta](#hoja-de-ruta).
 
 ## Qué hace hoy
 
@@ -14,6 +15,16 @@ e integración con n8n.
 - **Activa solo los pasos que aplican**: 18, 22 o 24 de los 24 pasos, y deja los demás como "no aplica".
 - **Relaciona cada paso con ISO 39001**, para que una misma evidencia sirva a las dos normas.
 - **Aísla los datos de cada empresa** en PostgreSQL con Row Level Security.
+- **Mantenimiento**: planes preventivos por kilometraje o tiempo (lo que ocurra primero) y órdenes de trabajo; cada
+  falla del preoperacional abre una orden correctiva y el vehículo vuelve a "apto" al cerrarla.
+- **Siniestros** con los datos del registro oficial, nivel según víctimas, investigación interna obligatoria en
+  estándar y avanzado, borrador de causas con IA y acciones correctivas.
+- **Comité de seguridad vial**: agenda sugerida con los pendientes, modo reunión con asistencia, notas por punto que
+  se guardan solas, decisiones con votación y quórum, compromisos, borrador del acta con IA, PDF como evidencia del
+  paso 2 y firma de cada asistente con su contraseña.
+- **Planificación**: matriz de riesgos 5×5 con riesgo residual, metas, plan anual y capacitaciones con asistencia.
+- **Desplazamientos**: rutas con límite de velocidad y viajes que no se asignan con documentos vencidos.
+- **VIGIA 2**: calendario de plazos, indicadores de los formularios A–D, datos faltantes y archivo Excel para cargar.
 
 ## Estructura
 
@@ -89,6 +100,13 @@ membresía y el permiso del rol.
 | Tablero | `GET /org/tablero` |
 | IA | `GET/PUT /org/ia/config`, `POST /org/ia/probar`, `POST /org/ia/copiloto`, `POST /org/ia/redactar`, `POST /org/ia/diagnostico`, `POST /org/ia/lector` |
 | Integraciones | `/org/integraciones/webhooks`, `/org/integraciones/tokens`, `GET /org/integraciones/entregas` |
+| Mantenimiento | `/org/mantenimiento/planes`, `/org/mantenimiento/ordenes`, `POST /org/mantenimiento/ordenes/:id/cerrar` |
+| Siniestros | `GET/POST /org/siniestros`, `PATCH /org/siniestros/:id/investigacion`, `POST /org/siniestros/:id/acciones`, `POST /org/siniestros/:id/borrador-ia` |
+| Comité | `/org/comite/miembros`, `GET /org/comite/agenda-sugerida`, `/org/comite/reuniones/:id` (`iniciar`, `puntos`, `asistencia`, `llegada`, `decisiones`, `compromisos`, `transcripcion`, `borrador-acta`, `cerrar`, `firmar`, `acta`) |
+| Acciones | `GET/POST /org/acciones`, `POST /org/acciones/:id/cerrar` |
+| Planificación | `/org/riesgos`, `/org/metas`, `/org/plan`, `/org/capacitaciones`, `PUT /org/capacitaciones/:id/asistentes` |
+| Desplazamientos | `/org/rutas`, `GET/POST /org/viajes`, `POST /org/viajes/:id/terminar` |
+| VIGIA 2 | `GET /org/vigia/calendario`, `GET /org/vigia/:formulario/:periodo`, `POST …/generar`, `POST …/enviado`, `GET …/archivo` |
 
 ### Fase 0 (referencia)
 

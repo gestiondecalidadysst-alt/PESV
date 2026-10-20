@@ -23,6 +23,15 @@ const Copiloto = cargar(() => import('./pages/Copiloto'), 'Copiloto');
 const ConfigIa = cargar(() => import('./pages/ConfigIa'), 'ConfigIa');
 const Integraciones = cargar(() => import('./pages/Integraciones'), 'Integraciones');
 const Miembros = cargar(() => import('./pages/Miembros'), 'Miembros');
+const Mantenimiento = cargar(() => import('./pages/Mantenimiento'), 'Mantenimiento');
+const Siniestros = cargar(() => import('./pages/Siniestros'), 'Siniestros');
+const SiniestroDetalle = cargar(() => import('./pages/Siniestros'), 'SiniestroDetalle');
+const Comite = cargar(() => import('./pages/Comite'), 'Comite');
+const ReunionComite = cargar(() => import('./pages/Comite'), 'ReunionComite');
+const Planificacion = cargar(() => import('./pages/Planificacion'), 'Planificacion');
+const Desplazamientos = cargar(() => import('./pages/Desplazamientos'), 'Desplazamientos');
+const Acciones = cargar(() => import('./pages/Acciones'), 'Acciones');
+const Vigia = cargar(() => import('./pages/Vigia'), 'Vigia');
 
 const conCarga = (pagina: ReactNode) => <Suspense fallback={<Cargando />}>{pagina}</Suspense>;
 
@@ -69,6 +78,15 @@ const router = createBrowserRouter([
           { path: 'flota', element: conCarga(<Flota />) },
           { path: 'preoperacional', element: conCarga(<Preoperacional />) },
           { path: 'copiloto', element: conCarga(<Copiloto />) },
+          { path: 'mantenimiento', element: conCarga(<Mantenimiento />) },
+          { path: 'siniestros', element: conCarga(<Siniestros />) },
+          { path: 'siniestros/:id', element: conCarga(<SiniestroDetalle />) },
+          { path: 'desplazamientos', element: conCarga(<Desplazamientos />) },
+          { path: 'comite', element: conCarga(<Comite />) },
+          { path: 'comite/:id', element: conCarga(<ReunionComite />) },
+          { path: 'planificacion', element: conCarga(<Planificacion />) },
+          { path: 'acciones', element: conCarga(<Acciones />) },
+          { path: 'vigia', element: conCarga(<Vigia />) },
           { path: 'configuracion/ia', element: conCarga(<ConfigIa />) },
           { path: 'configuracion/integraciones', element: conCarga(<Integraciones />) },
           { path: 'configuracion/miembros', element: conCarga(<Miembros />) },

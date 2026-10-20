@@ -9,3 +9,5 @@ export * from './roles';
 export * from './schemas-fase1';
 export * from './vencimientos';
 export * from './catalog/eventos';
+export * from './catalog/vigia';
+export * from './schemas-fase2';

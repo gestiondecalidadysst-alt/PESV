@@ -375,6 +375,48 @@ Tu tarea ahora es redactar un borrador de documento en Markdown para el paso ${p
     }
   }
 
+  /** Respuesta en JSON de un agente; tolera texto alrededor del objeto. */
+  private parsearJson<T>(texto: string): T {
+    const json = texto.match(/\{[\s\S]*\}/)?.[0];
+    try {
+      return JSON.parse(json ?? '') as T;
+    } catch {
+      throw new HttpException('La IA no devolvió un resultado utilizable. Intenta de nuevo.', HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+  }
+
+  /** Borrador de investigación de un siniestro; la persona lo revisa antes de guardarlo. */
+  async investigarSiniestro(orgId: string, usuarioId: string, resumen: string) {
+    const r = await this.llamar(
+      orgId,
+      usuarioId,
+      'siniestros',
+      `${PRINCIPIOS}
+Eres analista de siniestros viales laborales. Estructura una investigación con el método de árbol de causas a partir del relato.
+Responde solo con JSON: {"hechos": string, "causasInmediatas": string, "causasRaiz": string, "leccionesAprendidas": string, "accionesSugeridas": string[]}.
+No inventes datos que no estén en el relato; si falta información, indícalo como pregunta en "hechos".`,
+      [{ rol: 'user', texto: resumen }],
+      { maxTokens: 1800 },
+    );
+    return this.parsearJson<{ hechos: string; causasInmediatas: string; causasRaiz: string; leccionesAprendidas: string; accionesSugeridas: string[] }>(r.texto);
+  }
+
+  /** Borrador del acta del comité a partir de las notas o la transcripción. */
+  async redactarActa(orgId: string, usuarioId: string, material: string) {
+    const r = await this.llamar(
+      orgId,
+      usuarioId,
+      'redactor',
+      `${PRINCIPIOS}
+Redacta el acta de una reunión del comité de seguridad vial en español formal y claro.
+Estructura: asistentes y quórum, desarrollo por punto de agenda, decisiones con su votación y compromisos (responsable y fecha).
+No agregues decisiones, nombres ni fechas que no estén en el material. Devuelve texto plano con títulos simples.`,
+      [{ rol: 'user', texto: material }],
+      { maxTokens: 3000 },
+    );
+    return r.texto;
+  }
+
   async uso(orgId: string) {
     return this.database.withTenant(orgId, (tx) =>
       tx

@@ -280,3 +280,283 @@ export const apiTokens = pgTable('api_tokens', {
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
   createdAt: creado(),
 });
+
+// ---------------------------------------------------------------------------
+// Fase 2
+// ---------------------------------------------------------------------------
+
+export const maintenancePlans = pgTable('maintenance_plans', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  vehicleId: uuid('vehicle_id').notNull(),
+  name: text('name').notNull(),
+  intervalKm: integer('interval_km'),
+  intervalDays: integer('interval_days'),
+  lastDoneOn: date('last_done_on'),
+  lastDoneKm: integer('last_done_km'),
+  active: boolean('active').notNull().default(true),
+  createdAt: creado(),
+});
+
+export const workOrders = pgTable('work_orders', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  vehicleId: uuid('vehicle_id').notNull(),
+  kind: text('kind').notNull(),
+  source: text('source').notNull(),
+  planId: uuid('plan_id'),
+  inspectionId: uuid('inspection_id'),
+  itemCode: text('item_code'),
+  description: text('description').notNull(),
+  priority: text('priority').notNull().default('normal'),
+  status: text('status').notNull().default('abierta'),
+  providerName: text('provider_name'),
+  providerNit: text('provider_nit'),
+  technicianName: text('technician_name'),
+  technicianDocument: text('technician_document'),
+  technicianRole: text('technician_role'),
+  cost: numeric('cost', { mode: 'number' }),
+  odometerKm: integer('odometer_km'),
+  notes: text('notes'),
+  openedAt: timestamp('opened_at', { withTimezone: true }).notNull().defaultNow(),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  closedBy: uuid('closed_by'),
+});
+
+export const actions = pgTable('actions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  source: text('source').notNull(),
+  sourceId: uuid('source_id'),
+  kind: text('kind').notNull().default('compromiso'),
+  description: text('description').notNull(),
+  responsibleUserId: uuid('responsible_user_id'),
+  responsibleName: text('responsible_name').notNull(),
+  dueOn: date('due_on').notNull(),
+  status: text('status').notNull().default('abierta'),
+  closureNote: text('closure_note'),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  closedBy: uuid('closed_by'),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+});
+
+export const crashes = pgTable('crashes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull(),
+  location: text('location').notNull(),
+  municipality: text('municipality'),
+  vehicleId: uuid('vehicle_id'),
+  plate: text('plate').notNull(),
+  driverId: uuid('driver_id'),
+  driverName: text('driver_name').notNull(),
+  driverDocument: text('driver_document').notNull(),
+  fatalities: smallint('fatalities').notNull().default(0),
+  seriousInjuries: smallint('serious_injuries').notNull().default(0),
+  minorInjuries: smallint('minor_injuries').notNull().default(0),
+  ipatNumber: text('ipat_number'),
+  authority: text('authority'),
+  description: text('description').notNull(),
+  inMission: boolean('in_mission').notNull().default(true),
+  directCost: numeric('direct_cost', { mode: 'number' }).notNull().default(0),
+  indirectCost: numeric('indirect_cost', { mode: 'number' }).notNull().default(0),
+  committeeReviewedOn: date('committee_reviewed_on'),
+  status: text('status').notNull().default('abierto'),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+});
+
+export const crashInvestigations = pgTable('crash_investigations', {
+  crashId: uuid('crash_id').primaryKey(),
+  organizationId: org(),
+  required: boolean('required').notNull(),
+  investigators: text('investigators'),
+  facts: text('facts'),
+  immediateCauses: text('immediate_causes'),
+  rootCauses: text('root_causes'),
+  lessonsLearned: text('lessons_learned'),
+  status: text('status').notNull().default('pendiente'),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  updatedAt: actualizado(),
+});
+
+export const committeeMembers = pgTable('committee_members', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  userId: uuid('user_id'),
+  fullName: text('full_name').notNull(),
+  position: text('position'),
+  committeeRole: text('committee_role').notNull().default('integrante'),
+  active: boolean('active').notNull().default(true),
+  createdAt: creado(),
+});
+
+export interface PuntoAgenda {
+  id: string;
+  titulo: string;
+  notas: string;
+  origen?: string;
+}
+
+export const committeeMeetings = pgTable('committee_meetings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull(),
+  location: text('location'),
+  kind: text('kind').notNull().default('ordinaria'),
+  status: text('status').notNull().default('programada'),
+  agenda: jsonb('agenda').$type<PuntoAgenda[]>().notNull().default([]),
+  quorumRequired: smallint('quorum_required').notNull(),
+  transcript: text('transcript'),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  minutesKey: text('minutes_key'),
+  minutesChecksum: text('minutes_checksum'),
+  evidenceId: uuid('evidence_id'),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+});
+
+export const meetingAttendance = pgTable(
+  'meeting_attendance',
+  {
+    meetingId: uuid('meeting_id').notNull(),
+    memberId: uuid('member_id').notNull(),
+    organizationId: org(),
+    present: boolean('present').notNull().default(false),
+    checkedInAt: timestamp('checked_in_at', { withTimezone: true }),
+    signedAt: timestamp('signed_at', { withTimezone: true }),
+    signatureHash: text('signature_hash'),
+  },
+  (t) => [primaryKey({ columns: [t.meetingId, t.memberId] })],
+);
+
+export const meetingDecisions = pgTable('meeting_decisions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  meetingId: uuid('meeting_id').notNull(),
+  organizationId: org(),
+  agendaItemId: text('agenda_item_id'),
+  text: text('text').notNull(),
+  votesFor: smallint('votes_for').notNull().default(0),
+  votesAgainst: smallint('votes_against').notNull().default(0),
+  abstentions: smallint('abstentions').notNull().default(0),
+  approved: boolean('approved').notNull(),
+  createdAt: creado(),
+});
+
+export const roadRisks = pgTable('road_risks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  roadActor: text('road_actor').notNull(),
+  hazard: text('hazard').notNull(),
+  description: text('description').notNull(),
+  probability: smallint('probability').notNull(),
+  severity: smallint('severity').notNull(),
+  controls: text('controls'),
+  residualProbability: smallint('residual_probability'),
+  residualSeverity: smallint('residual_severity'),
+  ownerName: text('owner_name'),
+  status: text('status').notNull().default('abierto'),
+  identifiedOn: date('identified_on').notNull().$defaultFn(() => new Date().toISOString().slice(0, 10)),
+  createdAt: creado(),
+});
+
+export const goals = pgTable('goals', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  year: smallint('year').notNull(),
+  objective: text('objective').notNull(),
+  indicator: text('indicator').notNull(),
+  target: numeric('target', { mode: 'number' }).notNull(),
+  currentValue: numeric('current_value', { mode: 'number' }),
+  direction: text('direction').notNull().default('menor_o_igual'),
+  createdAt: creado(),
+});
+
+export const planActivities = pgTable('plan_activities', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  year: smallint('year').notNull(),
+  title: text('title').notNull(),
+  stepNumber: smallint('step_number'),
+  responsibleName: text('responsible_name').notNull(),
+  responsibleUserId: uuid('responsible_user_id'),
+  plannedStart: date('planned_start').notNull(),
+  plannedEnd: date('planned_end').notNull(),
+  status: text('status').notNull().default('planeada'),
+  executedOn: date('executed_on'),
+  budget: numeric('budget', { mode: 'number' }),
+  createdAt: creado(),
+});
+
+export const trainings = pgTable('trainings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  title: text('title').notNull(),
+  topic: text('topic').notNull(),
+  plannedOn: date('planned_on').notNull(),
+  executedOn: date('executed_on'),
+  hours: numeric('hours', { mode: 'number' }),
+  instructor: text('instructor'),
+  status: text('status').notNull().default('programada'),
+  createdAt: creado(),
+});
+
+export const trainingAttendance = pgTable('training_attendance', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  trainingId: uuid('training_id').notNull(),
+  organizationId: org(),
+  driverId: uuid('driver_id'),
+  fullName: text('full_name').notNull(),
+  documentNumber: text('document_number').notNull(),
+  attended: boolean('attended').notNull().default(true),
+});
+
+export const routes = pgTable('routes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  name: text('name').notNull(),
+  origin: text('origin').notNull(),
+  destination: text('destination').notNull(),
+  distanceKm: numeric('distance_km', { mode: 'number' }).notNull(),
+  tripsPerMonth: integer('trips_per_month').notNull().default(0),
+  speedLimitKmh: smallint('speed_limit_kmh'),
+  riskNotes: text('risk_notes'),
+  active: boolean('active').notNull().default(true),
+  createdAt: creado(),
+});
+
+export const trips = pgTable('trips', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  routeId: uuid('route_id'),
+  vehicleId: uuid('vehicle_id').notNull(),
+  driverId: uuid('driver_id').notNull(),
+  departureAt: timestamp('departure_at', { withTimezone: true }).notNull(),
+  arrivalAt: timestamp('arrival_at', { withTimezone: true }),
+  distanceKm: numeric('distance_km', { mode: 'number' }),
+  maxSpeedKmh: smallint('max_speed_kmh'),
+  speeding: boolean('speeding').notNull().default(false),
+  overShift: boolean('over_shift').notNull().default(false),
+  source: text('source').notNull().default('manual'),
+  externalId: text('external_id'),
+  status: text('status').notNull().default('programado'),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+});
+
+export const vigiaReports = pgTable('vigia_reports', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  form: text('form').notNull(),
+  period: text('period').notNull(),
+  status: text('status').notNull().default('generado'),
+  fileKey: text('file_key'),
+  fileName: text('file_name'),
+  indicators: jsonb('indicators').notNull().default({}),
+  generatedBy: uuid('generated_by'),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).notNull().defaultNow(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+  sentBy: uuid('sent_by'),
+});

@@ -8,4 +8,6 @@ coverage/
 !.env.example
 .DS_Store
 .storage-test/
-storage/
+# Archivos subidos en desarrollo (no el código de apps/api/src/storage)
+/storage/
+apps/api/storage/

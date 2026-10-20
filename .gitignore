@@ -11,3 +11,7 @@ coverage/
 # Archivos subidos en desarrollo (no el código de apps/api/src/storage)
 /storage/
 apps/api/storage/
+
+# Producción en el VPS
+respaldos/
+ci.env

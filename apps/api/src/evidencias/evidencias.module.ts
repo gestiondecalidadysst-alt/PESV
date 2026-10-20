@@ -40,6 +40,7 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { config } from '../config.js';
 import { DatabaseService, type TenantTx } from '../db/database.service.js';
 import { evidenceLinks, evidences, stepCompliance, users } from '../db/schema.js';
+import { EventosService } from '../eventos/eventos.service.js';
 import { nombreSeguro, StorageService } from '../storage/storage.service.js';
 
 export const TIPOS_PERMITIDOS = new Set([
@@ -64,6 +65,7 @@ export class EvidenciasService {
   constructor(
     private readonly database: DatabaseService,
     private readonly storage: StorageService,
+    private readonly eventos: EventosService,
   ) {}
 
   /**
@@ -148,6 +150,13 @@ export class EvidenciasService {
         entidadId: id,
         datos: { paso: input.pasoNumero, version },
       });
+      await this.eventos.emitir(tx, orgId, 'evidencia.por_revisar', {
+        evidenciaId: id,
+        titulo: input.titulo,
+        paso: input.pasoNumero,
+        version,
+        generadaPorIa: opciones.generadaPorIa ?? false,
+      });
       return evidencia!;
     });
   }
@@ -227,6 +236,12 @@ export class EvidenciasService {
         entidad: 'evidence',
         entidadId: id,
         datos: aprobar ? {} : { motivo: input.motivo },
+      });
+      await this.eventos.emitir(tx, orgId, 'evidencia.decidida', {
+        evidenciaId: id,
+        titulo: e.title,
+        decision: aprobar ? 'aprobada' : 'rechazada',
+        motivo: aprobar ? null : (input.motivo ?? null),
       });
       return actualizada!;
     });

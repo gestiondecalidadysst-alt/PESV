@@ -5,6 +5,8 @@ import { createBrowserRouter, Navigate, Outlet, RouterProvider, useLocation } fr
 import { Layout } from './components/Layout';
 import { Cargando } from './components/ui';
 import './index.css';
+import { PantallaError } from './components/PantallaError';
+import { escucharErroresGlobales } from './lib/errores';
 import { ProveedorSesion, useSesion } from './lib/sesion';
 
 const cargar = <T extends Record<string, unknown>>(fn: () => Promise<T>, nombre: keyof T) =>
@@ -38,6 +40,10 @@ const Riesgo = cargar(() => import('./pages/Riesgo'), 'Riesgo');
 const Iso = cargar(() => import('./pages/Riesgo'), 'Iso');
 const Suscripcion = cargar(() => import('./pages/Plataforma'), 'Suscripcion');
 const Plataforma = cargar(() => import('./pages/Plataforma'), 'Plataforma');
+const Recuperar = cargar(() => import('./pages/Cuenta'), 'Recuperar');
+const Restablecer = cargar(() => import('./pages/Cuenta'), 'Restablecer');
+const MiCuenta = cargar(() => import('./pages/Cuenta'), 'MiCuenta');
+const Notificaciones = cargar(() => import('./pages/Notificaciones'), 'Notificaciones');
 
 const conCarga = (pagina: ReactNode) => <Suspense fallback={<Cargando />}>{pagina}</Suspense>;
 
@@ -50,7 +56,7 @@ function RequiereSesion() {
   const { cargando, yo } = useSesion();
   const ubicacion = useLocation();
   if (cargando) return <div className="p-8"><Cargando /></div>;
-  if (!yo) return <Navigate to="/ingresar" replace state={{ desde: ubicacion.pathname }} />;
+  if (!yo) return <Navigate to="/ingresar" replace state={{ desde: `${ubicacion.pathname}${ubicacion.search}` }} />;
   if (yo.organizaciones.length === 0 && ubicacion.pathname !== '/organizaciones/nueva') {
     return <Navigate to="/organizaciones/nueva" replace />;
   }
@@ -66,13 +72,18 @@ function SoloSinSesion() {
 const router = createBrowserRouter([
   {
     element: <SoloSinSesion />,
+    errorElement: <PantallaError />,
     children: [
       { path: 'ingresar', element: conCarga(<Ingresar />) },
       { path: 'registro', element: conCarga(<Registro />) },
+      { path: 'recuperar', element: conCarga(<Recuperar />) },
     ],
   },
+  // Enlace de recuperación o de invitación: funciona con o sin sesión iniciada.
+  { path: 'restablecer', element: conCarga(<Restablecer />), errorElement: <PantallaError /> },
   {
     element: <RequiereSesion />,
+    errorElement: <PantallaError />,
     children: [
       {
         element: <Layout />,
@@ -102,6 +113,8 @@ const router = createBrowserRouter([
           { path: 'configuracion/ia', element: conCarga(<ConfigIa />) },
           { path: 'configuracion/integraciones', element: conCarga(<Integraciones />) },
           { path: 'configuracion/miembros', element: conCarga(<Miembros />) },
+          { path: 'configuracion/notificaciones', element: conCarga(<Notificaciones />) },
+          { path: 'mi-cuenta', element: conCarga(<MiCuenta />) },
           { path: 'organizaciones/nueva', element: conCarga(<NuevaOrganizacion />) },
           { path: '*', element: <Navigate to="/" replace /> },
         ],
@@ -109,6 +122,8 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+
+escucharErroresGlobales();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

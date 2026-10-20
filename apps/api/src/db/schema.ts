@@ -1,5 +1,6 @@
 import {
   bigint,
+  bigserial,
   boolean,
   date,
   integer,
@@ -82,6 +83,7 @@ export const users = pgTable('users', {
   isPlatformAdmin: boolean('is_platform_admin').notNull().default(false),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: creado(),
+  sessionsValidFrom: timestamp('sessions_valid_from', { withTimezone: true }),
 });
 
 export const memberships = pgTable(
@@ -628,4 +630,73 @@ export const subscriptions = pgTable('subscriptions', {
   notes: text('notes'),
   updatedBy: uuid('updated_by'),
   updatedAt: actualizado(),
+});
+
+// Cuentas, correo y errores ------------------------------------------------------
+
+export const passwordTokens = pgTable('password_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
+  tokenHash: text('token_hash').notNull(),
+  purpose: text('purpose').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  createdAt: creado(),
+});
+
+export const emailRules = pgTable(
+  'email_rules',
+  {
+    organizationId: org(),
+    eventType: text('event_type').notNull(),
+    roles: text('roles').array().notNull().default([]),
+    extraEmails: text('extra_emails').array().notNull().default([]),
+    active: boolean('active').notNull().default(true),
+    updatedAt: actualizado(),
+  },
+  (t) => [primaryKey({ columns: [t.organizationId, t.eventType] })],
+);
+
+export const emailOutbox = pgTable('email_outbox', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  organizationId: org(),
+  eventId: uuid('event_id'),
+  recipient: text('recipient').notNull(),
+  subject: text('subject').notNull(),
+  html: text('html').notNull(),
+  bodyText: text('body_text').notNull(),
+  status: text('status').notNull().default('pendiente'),
+  attempts: integer('attempts').notNull().default(0),
+  nextAttemptAt: timestamp('next_attempt_at', { withTimezone: true }).notNull().defaultNow(),
+  lastError: text('last_error'),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+  createdAt: creado(),
+});
+
+export const errorGroups = pgTable('error_groups', {
+  fingerprint: text('fingerprint').primaryKey(),
+  source: text('source').notNull(),
+  message: text('message').notNull(),
+  status: text('status').notNull().default('abierto'),
+  occurrences: integer('occurrences').notNull().default(0),
+  firstSeen: timestamp('first_seen', { withTimezone: true }).notNull().defaultNow(),
+  lastSeen: timestamp('last_seen', { withTimezone: true }).notNull().defaultNow(),
+  lastAlertAt: timestamp('last_alert_at', { withTimezone: true }),
+});
+
+export const errorEvents = pgTable('error_events', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  fingerprint: text('fingerprint').notNull(),
+  source: text('source').notNull(),
+  message: text('message').notNull(),
+  stack: text('stack'),
+  method: text('method'),
+  path: text('path'),
+  status: integer('status'),
+  requestId: text('request_id'),
+  userId: uuid('user_id'),
+  organizationId: uuid('organization_id'),
+  userAgent: text('user_agent'),
+  context: jsonb('context').notNull().default({}),
+  createdAt: creado(),
 });

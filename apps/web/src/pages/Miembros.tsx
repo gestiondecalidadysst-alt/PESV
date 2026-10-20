@@ -56,9 +56,51 @@ export function Miembros() {
   );
 }
 
+interface ResultadoInvitacion {
+  cuentaNueva: boolean;
+  correoEnviado: boolean;
+  enlaceInvitacion?: string;
+}
+
 function Invitar({ alTerminar }: { alTerminar: () => void }) {
-  const { register, handleSubmit, formState: { errors } } = useForm<InvitarMiembroInput>({ resolver: zodResolver(invitarMiembroSchema), defaultValues: { roles: ['conductor'] } });
-  const invitar = useAccion((d: InvitarMiembroInput) => api.post<{ cuentaNueva: boolean }>('/org/miembros', d), { alTerminar });
+  const { register, handleSubmit, getValues, formState: { errors } } = useForm<InvitarMiembroInput>({ resolver: zodResolver(invitarMiembroSchema), defaultValues: { roles: ['conductor'] } });
+  const [resultado, setResultado] = useState<ResultadoInvitacion | null>(null);
+  const [copiado, setCopiado] = useState(false);
+  const invitar = useAccion((d: InvitarMiembroInput) => api.post<ResultadoInvitacion>('/org/miembros', d), {
+    alTerminar: (r) => (r.enlaceInvitacion || r.correoEnviado ? setResultado(r) : alTerminar()),
+  });
+
+  if (resultado) {
+    const email = getValues('email');
+    return (
+      <Tarjeta>
+        <Subtitulo>Miembro agregado</Subtitulo>
+        {resultado.correoEnviado ? (
+          <Aviso tono="exito">
+            {resultado.cuentaNueva
+              ? `Enviamos a ${email} un enlace para crear su contraseña. Vence en 7 días.`
+              : `${email} ya tenía cuenta: le avisamos por correo que ahora tiene acceso.`}
+          </Aviso>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <Aviso tono="info">
+              La plataforma no tiene servidor de correo configurado. Comparte este enlace con {email} por un canal seguro para que cree su contraseña (vence en 7 días):
+            </Aviso>
+            <code className="break-all rounded-lg bg-papel p-3 text-[13px]">{resultado.enlaceInvitacion}</code>
+            <Boton
+              variante="secundario"
+              className="self-start"
+              onClick={() => void navigator.clipboard?.writeText(resultado.enlaceInvitacion ?? '').then(() => setCopiado(true))}
+            >
+              {copiado ? 'Enlace copiado' : 'Copiar enlace'}
+            </Boton>
+          </div>
+        )}
+        <Boton className="self-start" onClick={alTerminar}>Listo</Boton>
+      </Tarjeta>
+    );
+  }
+
   return (
     <Tarjeta>
       <Subtitulo>Agregar miembro</Subtitulo>
@@ -74,15 +116,23 @@ function Invitar({ alTerminar }: { alTerminar: () => void }) {
           </div>
           {errors.roles && <p className="text-[13px] text-alerta">{errors.roles.message}</p>}
         </fieldset>
-        <Campo
-          id="m-clave"
-          etiqueta="Contraseña temporal"
-          type="password"
-          autoComplete="new-password"
-          ayuda="Solo si la persona aún no tiene cuenta. Compártela por un canal seguro y pídele que la cambie."
-          error={errors.passwordTemporal?.message}
-          {...register('passwordTemporal', { setValueAs: (v) => v || undefined })}
-        />
+        <p className="text-sm text-gris">
+          Si la persona aún no tiene cuenta, le llegará un correo con un enlace para crear su contraseña. Si ya tiene cuenta, recibirá un aviso de que ahora tiene acceso.
+        </p>
+        <details className="text-sm">
+          <summary className="cursor-pointer font-semibold text-[#1d4e89]">Prefiero asignar una contraseña temporal</summary>
+          <div className="mt-3">
+            <Campo
+              id="m-clave"
+              etiqueta="Contraseña temporal"
+              type="password"
+              autoComplete="new-password"
+              ayuda="Solo para cuentas nuevas. Compártela por un canal seguro y pídele que la cambie en Mi cuenta."
+              error={errors.passwordTemporal?.message}
+              {...register('passwordTemporal', { setValueAs: (v) => v || undefined })}
+            />
+          </div>
+        </details>
         <Aviso error={invitar.error} />
         <div className="flex gap-2">
           <Boton type="submit" cargando={invitar.isPending}>Agregar</Boton>

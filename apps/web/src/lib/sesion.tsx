@@ -6,7 +6,13 @@ import type { Membresia, Yo } from './tipos';
 
 const CLAVE_ORG = 'pesv.organizacionActiva';
 
+/** Organización inicial: la del enlace (?org=, desde un correo) o la última elegida en este navegador. */
 function leerGuardada(): string | null {
+  const deEnlace = new URLSearchParams(window.location.search).get('org');
+  if (deEnlace && /^[0-9a-f-]{36}$/i.test(deEnlace)) {
+    guardar(deEnlace);
+    return deEnlace;
+  }
   try {
     return localStorage.getItem(CLAVE_ORG);
   } catch {
@@ -75,8 +81,11 @@ export function ProveedorSesion({ children }: { children: React.ReactNode }) {
 
   const salir = useCallback(async () => {
     await api.post('/auth/salir').catch(() => undefined);
-    queryClient.clear();
+    // Primero se marca la sesión como cerrada (los componentes que la observan se enteran) y luego se
+    // borran los demás datos. queryClient.clear() desconectaría a esos observadores y la pantalla
+    // seguiría mostrando la sesión anterior.
     queryClient.setQueryData(['yo'], null);
+    queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== 'yo' });
   }, [queryClient]);
 
   const valor: Sesion = {

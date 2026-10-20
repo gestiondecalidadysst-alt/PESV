@@ -11,7 +11,7 @@ import {
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
-import { invitarMiembroSchema, type InvitarMiembroInput } from '@pesv/shared';
+import { invitarMiembroSchema, VIGENCIA_ENLACE_MINUTOS, type InvitarMiembroInput } from '@pesv/shared';
 import { and, eq, sql } from 'drizzle-orm';
 import {
   OrgActual,
@@ -25,12 +25,19 @@ import { hashPassword } from '../common/crypto.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { verificarLimite } from '../suscripciones/reglas.js';
 import { DatabaseService } from '../db/database.service.js';
-import { memberships, users } from '../db/schema.js';
+import { memberships, organizations, users } from '../db/schema.js';
+import { crearEnlace } from '../auth/enlaces.js';
+import { config } from '../config.js';
+import { CorreoService } from '../correo/correo.module.js';
+import { correoAgregado, correoInvitacion } from '../correo/plantillas.js';
 import { randomUUID } from 'node:crypto';
 
 @Injectable()
 export class MiembrosService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly correo: CorreoService,
+  ) {}
 
   async listar(orgId: string) {
     return this.database.withTenant(orgId, async (tx) => {
@@ -50,17 +57,16 @@ export class MiembrosService {
     });
   }
 
-  /** Agrega a una persona con sus roles. Si no tiene cuenta, se crea con una contraseña temporal. */
-  async invitar(orgId: string, input: InvitarMiembroInput, actorId: string) {
-    const { rows } = await this.database.db.execute<{ id: string | null }>(
-      sql`select auth_find_user_id(${input.email}) as id`,
-    );
+  /**
+   * Agrega a una persona con sus roles. Si no tiene cuenta se crea y recibe por correo un enlace
+   * para crear su contraseña (o se usa la contraseña temporal, si el administrador la escribe).
+   * Si ya tiene cuenta, recibe un aviso de que tiene acceso a la organización.
+   */
+  async invitar(orgId: string, input: InvitarMiembroInput, actor: UsuarioSesion) {
+    const { rows } = await this.database.db.execute<{ id: string | null }>(sql`select auth_find_user_id(${input.email}) as id`);
     let usuarioId = rows[0]?.id ?? null;
     const passwordHash = usuarioId || !input.passwordTemporal ? null : await hashPassword(input.passwordTemporal);
-    if (!usuarioId && !passwordHash) {
-      throw new BadRequestException('Esta persona aún no tiene cuenta: escribe una contraseña temporal para crearla');
-    }
-    return this.database.withTenant(orgId, async (tx) => {
+    const r = await this.database.withTenant(orgId, async (tx) => {
       const creado = !usuarioId;
       const yaEsMiembro =
         !creado &&
@@ -74,16 +80,36 @@ export class MiembrosService {
         .insert(memberships)
         .values(input.roles.map((role) => ({ organizationId: orgId, userId: usuarioId!, role })))
         .onConflictDoNothing();
+      // El enlace se crea en la misma transacción para que la función vea la cuenta recién creada.
+      const enlace = creado && !passwordHash ? await crearEnlace(tx, input.email, 'invitacion') : null;
+      const [org] = await tx.select({ nombre: organizations.name }).from(organizations).where(eq(organizations.id, orgId));
       await auditar(tx, {
         organizacionId: orgId,
-        actorId,
+        actorId: actor.id,
         accion: 'miembro.agregado',
         entidad: 'membership',
         entidadId: usuarioId,
-        datos: { roles: input.roles, cuentaNueva: creado },
+        datos: { roles: input.roles, cuentaNueva: creado, invitacionPorCorreo: !!enlace },
       });
-      return { usuarioId, cuentaNueva: creado };
+      return { usuarioId: usuarioId!, creado, enlace, yaEsMiembro, organizacion: org?.nombre ?? 'la organización' };
     });
+
+    let correoEnviado = false;
+    if (r.enlace) {
+      correoEnviado = await this.correo.enviarSinFallar(
+        input.email,
+        correoInvitacion(input.nombre, r.organizacion, actor.nombre, r.enlace.url, VIGENCIA_ENLACE_MINUTOS.invitacion / 1440),
+      );
+    } else if (!r.creado && !r.yaEsMiembro) {
+      correoEnviado = await this.correo.enviarSinFallar(input.email, correoAgregado(input.nombre, r.organizacion, actor.nombre, `${config.webUrl}/ingresar`));
+    }
+    return {
+      usuarioId: r.usuarioId,
+      cuentaNueva: r.creado,
+      correoEnviado: correoEnviado && this.correo.configurado,
+      // Sin servidor de correo, el administrador puede compartir el enlace por otro medio.
+      enlaceInvitacion: r.enlace && !this.correo.configurado ? r.enlace.url : undefined,
+    };
   }
 
   async quitar(orgId: string, usuarioId: string, actorId: string) {
@@ -120,7 +146,7 @@ export class MiembrosController {
     @OrgActual() org: OrgSesion,
     @UsuarioActual() usuario: UsuarioSesion,
   ) {
-    return this.service.invitar(org.id, body, usuario.id);
+    return this.service.invitar(org.id, body, usuario);
   }
 
   @Delete(':usuarioId')

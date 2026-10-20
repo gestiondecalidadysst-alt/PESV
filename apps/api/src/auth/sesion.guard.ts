@@ -49,8 +49,8 @@ export class SesionGuard implements CanActivate {
     const token =
       (req.cookies?.[COOKIE_SESION] as string | undefined) ??
       req.header('authorization')?.replace(/^Bearer\s+/i, '');
-    const usuarioId = token ? await verificarSesion(token) : null;
-    const usuario = usuarioId ? await this.auth.usuarioPorId(usuarioId) : null;
+    const sesion = token ? await verificarSesion(token) : null;
+    const usuario = sesion ? await this.auth.usuarioDeSesion(sesion.usuarioId, sesion.emitidaMs) : null;
     if (!usuario) throw new UnauthorizedException('Tu sesión terminó. Ingresa de nuevo.');
     req.usuario = usuario;
 

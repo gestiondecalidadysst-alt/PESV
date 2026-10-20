@@ -9,6 +9,8 @@ import { PlanificacionModule } from './planificacion/planificacion.module.js';
 import { SiniestrosModule } from './siniestros/siniestros.module.js';
 import { TareasModule } from './tareas/tareas.module.js';
 import { VigiaModule } from './vigia/vigia.module.js';
+import { CorreoModule } from './correo/correo.module.js';
+import { ErroresModule } from './errores/errores.module.js';
 import { CatalogController } from './catalog/catalog.controller.js';
 import { ClassificationController } from './classification/classification.controller.js';
 import { DatabaseModule } from './db/database.module.js';
@@ -31,6 +33,8 @@ import { TelematicaModule } from './telematica/telematica.module.js';
     DatabaseModule,
     StorageModule,
     EventosModule,
+    CorreoModule,
+    ErroresModule,
     AuthModule,
     OrganizationsModule,
     MiembrosModule,

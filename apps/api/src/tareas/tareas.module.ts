@@ -3,6 +3,7 @@ import { diasHasta } from '@pesv/shared';
 import { and, eq, lte, sql } from 'drizzle-orm';
 import { DatabaseService } from '../db/database.service.js';
 import { actions } from '../db/schema.js';
+import { ErroresService } from '../errores/errores.module.js';
 import { EventosService } from '../eventos/eventos.service.js';
 import { FlotaModule, FlotaService } from '../flota/flota.module.js';
 import { MantenimientoModule, MantenimientoService } from '../mantenimiento/mantenimiento.module.js';
@@ -32,11 +33,16 @@ export class TareasService implements OnModuleInit, OnModuleDestroy {
     private readonly vigia: VigiaService,
     private readonly tablero: TableroService,
     private readonly riesgo: RiesgoService,
+    private readonly errores: ErroresService,
   ) {}
 
   onModuleInit() {
     if (process.env.DISABLE_WORKERS === 'true') return;
-    const correr = () => void this.ejecutar().catch((e) => this.log.error(e));
+    const correr = () =>
+      void this.ejecutar().catch((e: Error) => {
+        this.log.error(e.message, e.stack);
+        void this.errores.registrar({ fuente: 'tarea', mensaje: e.message, pila: e.stack, contexto: { tarea: 'revision_horaria' } });
+      });
     this.inicial = setTimeout(correr, 30_000);
     this.temporizador = setInterval(correr, 3_600_000);
   }
@@ -53,9 +59,12 @@ export class TareasService implements OnModuleInit, OnModuleDestroy {
       try {
         emitidos += await this.revisarOrganizacion(id, hoy);
       } catch (err) {
-        this.log.error(`Organización ${id}: ${(err as Error).message}`);
+        const e = err as Error;
+        this.log.error(`Organización ${id}: ${e.message}`, e.stack);
+        await this.errores.registrar({ fuente: 'tarea', mensaje: e.message, pila: e.stack, organizacionId: id, contexto: { tarea: 'revision_horaria' } });
       }
     }
+    await this.errores.depurar();
     return { organizaciones: rows.length, emitidos };
   }
 

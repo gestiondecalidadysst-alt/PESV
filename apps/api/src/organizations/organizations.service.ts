@@ -19,6 +19,7 @@ import {
 import { and, count, desc, eq, inArray, ne, notInArray, sql } from 'drizzle-orm';
 import { auditar, esViolacionUnica } from '../common/audit.js';
 import { suscripcionInicial } from '../suscripciones/reglas.js';
+import { reglasDeCorreoIniciales } from '../correo/notificaciones.js';
 import { DatabaseService, type TenantTx } from '../db/database.service.js';
 import {
   classifications,
@@ -84,6 +85,7 @@ export class OrganizationsService {
         ]);
         await this.guardarClasificacion(tx, id, input.clasificacion, resultado, usuarioId);
         await suscripcionInicial(tx, id);
+        await reglasDeCorreoIniciales(tx, id);
         await tx.insert(stepCompliance).values(
           PASOS_PESV.map((p) => ({
             organizationId: id,

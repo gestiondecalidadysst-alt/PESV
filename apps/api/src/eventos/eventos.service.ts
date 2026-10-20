@@ -2,6 +2,8 @@ import { createHmac, randomUUID } from 'node:crypto';
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import { decrypt } from '../common/crypto.js';
+import { encolarNotificacionesDeEvento } from '../correo/notificaciones.js';
+import { ErroresService } from '../errores/errores.module.js';
 import { DatabaseService, type TenantTx } from '../db/database.service.js';
 import { eventOutbox, webhookDeliveries, webhookEndpoints } from '../db/schema.js';
 
@@ -23,11 +25,21 @@ export class EventosService implements OnModuleInit, OnModuleDestroy {
   private temporizador?: NodeJS.Timeout;
   private despachando = false;
 
-  constructor(private readonly database: DatabaseService) {}
+  constructor(
+    private readonly database: DatabaseService,
+    private readonly errores: ErroresService,
+  ) {}
 
   onModuleInit() {
     if (process.env.DISABLE_WORKERS === 'true') return;
-    this.temporizador = setInterval(() => void this.despachar().catch((e) => this.log.error(e)), 10_000);
+    this.temporizador = setInterval(
+      () =>
+        void this.despachar().catch((e: Error) => {
+          this.log.error(e.message, e.stack);
+          void this.errores.registrar({ fuente: 'tarea', mensaje: e.message, pila: e.stack, contexto: { tarea: 'webhooks' } });
+        }),
+      10_000,
+    );
   }
 
   onModuleDestroy() {
@@ -42,6 +54,7 @@ export class EventosService implements OnModuleInit, OnModuleDestroy {
       .onConflictDoNothing()
       .returning();
     if (!evento) return null;
+    await encolarNotificacionesDeEvento(tx, orgId, { id: evento.id, tipo, datos });
     const destinos = await tx
       .select({ id: webhookEndpoints.id })
       .from(webhookEndpoints)

@@ -6,7 +6,9 @@ e integración con n8n.
 
 > Estado: **Fases 0 a 3 completas**. Gestión de los 24 pasos con evidencias, operación de flota, comité, siniestros,
 > planificación, VIGIA 2, auditorías con auditor simulado de IA, puntaje de riesgo, telemática GPS, ISO 39001 y
-> planes configurables desde un panel de la plataforma. Ver [Hoja de ruta](#hoja-de-ruta) para lo que sigue.
+> planes configurables desde un panel de la plataforma. Lista para producción en un VPS: recuperación de contraseña e
+> invitaciones por correo, notificaciones por correo, registro de errores y despliegue con HTTPS y copias de seguridad
+> ([guía de despliegue](docs/despliegue.md)).
 
 ## Qué hace hoy
 
@@ -35,6 +37,11 @@ e integración con n8n.
 - **Adopción voluntaria**: organizaciones no obligadas pueden implementar el nivel básico.
 - **Planes y suscripciones** configurables desde el panel de la plataforma: límites, funciones, precio y días de
   prueba. Con mora la cuenta queda en solo lectura, sin perder acceso a la información.
+- **Cuentas**: recuperación de contraseña por correo, invitaciones con enlace para crear la contraseña, cambio de
+  contraseña y cierre de sesiones en otros dispositivos.
+- **Correo**: notificaciones por evento a los roles que cada organización elija, con reintentos e historial.
+- **Registro de errores**: errores de la API, la web y las tareas agrupados por causa, con código de solicitud y aviso
+  por correo a los administradores de la plataforma.
 
 ## Estructura
 
@@ -55,6 +62,16 @@ siembra desde ahí y el frontend lo usa para calcular el nivel en vivo, con exac
 
 - Node.js 22 o superior y pnpm 10 (`corepack enable`)
 - PostgreSQL 16, o Docker
+
+## Producción
+
+Para instalar en un servidor propio (VPS) con HTTPS automático, copias de seguridad diarias y monitoreo, sigue la
+[guía de despliegue](docs/despliegue.md). En resumen:
+
+```bash
+sudo git clone https://github.com/gestiondecalidadysst-alt/PESV.git /opt/pesv && cd /opt/pesv
+sudo ./deploy/instalar.sh
+```
 
 ## Arranque rápido con Docker
 
@@ -107,7 +124,7 @@ membresía y el permiso del rol.
 
 | Módulo | Rutas principales |
 | --- | --- |
-| Autenticación | `POST /auth/registro`, `POST /auth/ingresar`, `POST /auth/salir`, `GET /auth/yo` |
+| Autenticación | `POST /auth/registro`, `POST /auth/ingresar`, `POST /auth/salir`, `GET /auth/yo`, `POST /auth/recuperar`, `GET /auth/enlace`, `POST /auth/restablecer`, `POST /auth/cambiar-clave`, `POST /auth/cerrar-sesiones` |
 | Organización | `GET /org`, `GET /org/pasos`, `PATCH /org/pasos/:n`, `GET/POST /org/reclasificacion`, `POST /organizations` |
 | Miembros | `GET/POST /org/miembros`, `DELETE /org/miembros/:id` |
 | Evidencias | `GET/POST /org/evidencias`, `POST /org/evidencias/:id/decision`, `GET /org/evidencias/:id/archivo` |
@@ -128,6 +145,8 @@ membresía y el permiso del rol.
 | ISO 39001 | `GET /org/tablero/iso` |
 | Telemática | `POST /telematica/viajes` (token con alcance `telematica`) |
 | Suscripción | `GET /org/suscripcion` |
+| Notificaciones | `GET/PUT /org/notificaciones`, `GET /org/notificaciones/historial`, `POST /org/notificaciones/prueba` |
+| Errores | `POST /errores/web` (público, con límite), `GET /plataforma/errores`, `GET/PATCH /plataforma/errores/:huella` |
 | Plataforma | `/plataforma/planes`, `GET /plataforma/organizaciones`, `PUT /plataforma/organizaciones/:id/suscripcion`, `/plataforma/administradores` (solo administradores de la plataforma) |
 
 Las funciones de IA, n8n, telemática, ISO 39001 y auditor simulado se habilitan según el plan de la organización;

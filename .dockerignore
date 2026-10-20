@@ -1,0 +1,15 @@
+# Lo que nunca debe entrar a una imagen: dependencias locales, compilados, secretos y datos.
+.git
+**/node_modules
+**/dist
+**/.turbo
+**/coverage
+**/.env
+**/.env.*
+!.env.example
+deploy/.env
+respaldos
+apps/api/storage
+apps/api/.storage-test
+apps/web/test-results
+*.log

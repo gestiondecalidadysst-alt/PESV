@@ -150,7 +150,7 @@ export class ComiteService {
           tipo: committeeMeetings.kind,
           estado: committeeMeetings.status,
           quorumRequerido: committeeMeetings.quorumRequired,
-          presentes: sql<number>`(select count(*)::int from meeting_attendance a where a.meeting_id = ${committeeMeetings.id} and a.present)`,
+          presentes: sql<number>`(select count(*)::int from meeting_attendance a where a.meeting_id = committee_meetings.id and a.present)`,
         })
         .from(committeeMeetings)
         .orderBy(desc(committeeMeetings.scheduledAt)),

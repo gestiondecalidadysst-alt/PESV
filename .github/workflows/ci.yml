@@ -37,3 +37,41 @@ jobs:
       - run: pnpm db:migrate && pnpm db:seed
       - run: pnpm test
       - run: pnpm build
+
+  despliegue:
+    # Valida los archivos del VPS y construye las imágenes de producción.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scripts de despliegue (shellcheck)
+        run: shellcheck deploy/*.sh
+      - name: Configuración de prueba
+        run: |
+          cp deploy/env.ejemplo ci.env
+          sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=ci|; s|^APP_DB_PASSWORD=.*|APP_DB_PASSWORD=ci|" ci.env
+          sed -i "s|^SESSION_SECRET=.*|SESSION_SECRET=$(openssl rand -base64 48 | tr -d '\n')|; s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=$(openssl rand -base64 32)|" ci.env
+      - name: Compose de producción
+        run: docker compose -f docker-compose.prod.yml --env-file ci.env config --quiet
+      - name: Caddyfile
+        run: >-
+          docker run --rm -e DOMINIO=pesv.ejemplo.co -e ACME_EMAIL=ci@ejemplo.co
+          -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2.10-alpine
+          caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Construir imágenes
+        run: docker compose -f docker-compose.prod.yml --env-file ci.env build
+      - name: Arrancar y verificar
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file ci.env up -d db migrar api web
+          for _ in $(seq 1 40); do
+            if docker compose -f docker-compose.prod.yml --env-file ci.env exec -T api node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"; then
+              echo "API saludable"; exit 0
+            fi
+            sleep 3
+          done
+          docker compose -f docker-compose.prod.yml --env-file ci.env logs --tail 100 migrar api
+          exit 1
+      - name: Copia de seguridad
+        run: |
+          docker compose -f docker-compose.prod.yml --env-file ci.env up -d respaldos
+          docker compose -f docker-compose.prod.yml --env-file ci.env exec -T respaldos sh /respaldo.sh ahora
+          ls -l respaldos

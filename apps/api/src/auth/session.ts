@@ -5,8 +5,9 @@ import { config } from '../config.js';
 export const COOKIE_SESION = 'pesv_sesion';
 const secreto = new TextEncoder().encode(config.sessionSecret);
 
+/** La sesión guarda el instante exacto de emisión (ms) para invalidarla al cambiar la contraseña. */
 export async function firmarSesion(usuarioId: string): Promise<string> {
-  return new SignJWT({})
+  return new SignJWT({ ems: Date.now() })
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(usuarioId)
     .setIssuedAt()
@@ -15,10 +16,12 @@ export async function firmarSesion(usuarioId: string): Promise<string> {
     .sign(secreto);
 }
 
-export async function verificarSesion(token: string): Promise<string | null> {
+/** Devuelve el usuario y el instante (ms) en que se firmó la sesión, o null si no es válida. */
+export async function verificarSesion(token: string): Promise<{ usuarioId: string; emitidaMs: number } | null> {
   try {
     const { payload } = await jwtVerify(token, secreto, { issuer: 'pesv', algorithms: ['HS256'] });
-    return payload.sub ?? null;
+    const emitidaMs = typeof payload.ems === 'number' ? payload.ems : (payload.iat ?? 0) * 1000;
+    return payload.sub ? { usuarioId: payload.sub, emitidaMs } : null;
   } catch {
     return null;
   }
@@ -27,7 +30,7 @@ export async function verificarSesion(token: string): Promise<string | null> {
 export const opcionesCookie: CookieOptions = {
   httpOnly: true,
   sameSite: 'lax',
-  secure: config.produccion,
+  secure: config.cookieSecure,
   path: '/',
   maxAge: config.sessionHours * 3600 * 1000,
 };

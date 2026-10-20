@@ -1,0 +1,45 @@
+# Caddy: HTTPS automático con Let's Encrypt para el dominio de la plataforma.
+# Variables: DOMINIO y ACME_EMAIL (en deploy/.env).
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMINIO} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		# Sin Referer: los enlaces de recuperación llevan un token en la URL.
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(self), geolocation=(self), microphone=()"
+		-Server
+	}
+
+	# La API recibe directo las peticiones (un solo proxy: TRUST_PROXY=1).
+	handle /api/* {
+		request_body {
+			max_size 16MB
+		}
+		reverse_proxy {$API_DESTINO:api:3000}
+	}
+
+	handle {
+		reverse_proxy {$WEB_DESTINO:web:80}
+	}
+
+	# Registro de accesos en JSON, sin el token de los enlaces de recuperación.
+	log {
+		output stdout
+		format filter {
+			request>uri query {
+				replace token [oculto]
+			}
+			request>headers>Cookie delete
+			request>headers>Referer delete
+			request>headers>Authorization delete
+			resp_headers>Set-Cookie delete
+		}
+	}
+}

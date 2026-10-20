@@ -32,7 +32,28 @@ export const config = {
   /** Tamaño máximo por archivo; coincide con el límite de soportes de VIGIA 2 (RN-24). */
   maxUploadBytes: 15 * 1024 * 1024,
   /** URL pública de la web, para enlaces en notificaciones. */
-  webUrl: process.env.WEB_URL ?? 'http://localhost:5173',
+  webUrl: (process.env.WEB_URL ?? 'http://localhost:5173').replace(/\/+$/, ''),
+  /**
+   * Cookie de sesión solo por HTTPS. Activa en producción; COOKIE_SECURE=false solo para probar
+   * un servidor sin dominio ni certificado.
+   */
+  cookieSecure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE === 'true' : produccion,
+  /** Saltos de proxy confiables para conocer la IP real (Caddy delante de la API = 1). */
+  trustProxy: Number(process.env.TRUST_PROXY ?? 1),
+  /**
+   * Correo saliente por SMTP (cualquier proveedor: Gmail, Zoho, Brevo, Amazon SES…). Sin
+   * SMTP_HOST los correos se escriben en el registro de la API en vez de enviarse.
+   */
+  correo: {
+    host: process.env.SMTP_HOST ?? '',
+    port: Number(process.env.SMTP_PORT ?? 587),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER ?? '',
+    pass: process.env.SMTP_PASS ?? '',
+    from: process.env.MAIL_FROM ?? 'PESV <no-responder@localhost>',
+  },
+  /** Formato de los registros: «json» en producción (una línea por evento), «texto» en desarrollo. */
+  formatoLogs: (process.env.LOG_FORMAT ?? (produccion ? 'json' : 'texto')) as 'json' | 'texto',
 };
 
 if (config.sessionSecret.length < 32) throw new Error('SESSION_SECRET debe tener al menos 32 caracteres');

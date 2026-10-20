@@ -1,0 +1,144 @@
+# Producción en un VPS. Se usa a través de deploy/pesv.sh, que pasa deploy/.env:
+#   ./deploy/pesv.sh iniciar
+# Servicios: base de datos, migraciones, API, web, Caddy (HTTPS) y copias de seguridad diarias.
+name: pesv
+
+x-registros: &registros
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "5" }
+
+x-api: &imagen-api
+  build: { context: ., dockerfile: apps/api/Dockerfile }
+  image: pesv-api:latest
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pesv_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en deploy/.env}
+      POSTGRES_DB: pesv
+      TZ: ${TZ:-America/Bogota}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pesv_owner -d pesv"]
+      interval: 10s
+      retries: 10
+    <<: *registros
+
+  migrar:
+    <<: [*imagen-api, *registros]
+    command: ["sh", "-c", "node scripts/migrate.mjs && node scripts/seed.mjs"]
+    environment:
+      DATABASE_ADMIN_URL: postgres://pesv_owner:${POSTGRES_PASSWORD}@db:5432/pesv
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Falta APP_DB_PASSWORD en deploy/.env}
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    <<: [*imagen-api, *registros]
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      TZ: ${TZ:-America/Bogota}
+      DATABASE_URL: postgres://pesv_app:${APP_DB_PASSWORD}@db:5432/pesv
+      WEB_URL: https://${DOMINIO:?Falta DOMINIO en deploy/.env}
+      CORS_ORIGINS: https://${DOMINIO}
+      SESSION_SECRET: ${SESSION_SECRET:?Falta SESSION_SECRET en deploy/.env}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Falta ENCRYPTION_KEY en deploy/.env}
+      TRUST_PROXY: "1"
+      COOKIE_SECURE: ${COOKIE_SECURE:-true}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      STORAGE_DIR: /data/storage
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-PESV <no-responder@localhost>}
+    volumes:
+      - archivos:/data/storage
+    depends_on:
+      migrar: { condition: service_completed_successfully }
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    image: pesv-web:latest
+    restart: unless-stopped
+    depends_on:
+      - api
+    <<: *registros
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMINIO: ${DOMINIO}
+      ACME_EMAIL: ${ACME_EMAIL:?Falta ACME_EMAIL en deploy/.env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api: { condition: service_healthy }
+      web: { condition: service_started }
+    <<: *registros
+
+  respaldos:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    entrypoint: ["sh", "/respaldo.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: pesv_owner
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: pesv
+      TZ: ${TZ:-America/Bogota}
+      RESPALDO_HORA: ${RESPALDO_HORA:-02:30}
+      RESPALDO_DIAS: ${RESPALDO_DIAS:-14}
+      RESPALDO_AVISO_URL: ${RESPALDO_AVISO_URL:-}
+    volumes:
+      - ./deploy/respaldo.sh:/respaldo.sh:ro
+      - ./respaldos:/respaldos
+      - archivos:/archivos:ro
+    depends_on:
+      db: { condition: service_healthy }
+    <<: *registros
+
+  # Monitoreo de disponibilidad (opcional): ./deploy/pesv.sh monitoreo
+  # Se abre por túnel SSH (solo escucha en el propio servidor): ssh -L 3001:localhost:3001 usuario@vps
+  monitoreo:
+    image: louislam/uptime-kuma:1
+    restart: unless-stopped
+    profiles: ["monitoreo"]
+    ports:
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - monitoreo:/app/data
+    <<: *registros
+
+volumes:
+  pgdata:
+  archivos:
+  caddy_data:
+  caddy_config:
+  monitoreo:

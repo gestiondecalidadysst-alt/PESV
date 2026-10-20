@@ -76,6 +76,16 @@ regla ya está implementada.
 | RN-28 | Todo cambio queda en un registro de auditoría que no se puede editar. | Implementada (solo inserción) |
 | RN-29 | Los datos personales de conductores se tratan bajo la Ley 1581 de 2012, con consentimiento al registrarlos. | Implementada |
 
+## Acceso, correo y errores
+
+| Id | Regla | Estado |
+| --- | --- | --- |
+| RN-35 | Recuperar la contraseña responde igual exista o no la cuenta. El enlace es de un solo uso y vence en 60 minutos; solo se guarda su hash. Máximo 3 enlaces cada 15 minutos por cuenta y 5 solicitudes por IP. | Implementada |
+| RN-36 | Cambiar o restablecer la contraseña cierra las sesiones abiertas en otros dispositivos y avisa por correo. | Implementada |
+| RN-37 | Una persona nueva recibe una invitación para crear su propia contraseña (vence en 7 días); el administrador no necesita conocerla. | Implementada |
+| RN-38 | Cada organización decide qué eventos se notifican por correo y a qué roles. Un correo fallido se reintenta hasta 5 veces y queda en el historial. | Implementada |
+| RN-39 | Los errores inesperados se registran con un código de solicitud que también ve la persona. Un error nuevo avisa a los administradores de la plataforma como máximo una vez por hora; las ocurrencias se guardan 30 días. | Implementada |
+
 ## Integraciones
 
 | Id | Regla | Estado |

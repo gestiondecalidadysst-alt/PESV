@@ -1,0 +1,49 @@
+name: Desplegar
+
+# Actualiza el VPS por SSH. Manual desde la pestaña Actions o automático después de que el CI
+# pase en main, si la variable DESPLIEGUE_AUTOMATICO vale «true». Ver docs/despliegue.md.
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: desplegar
+  cancel-in-progress: false
+
+jobs:
+  desplegar:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && vars.DESPLIEGUE_AUTOMATICO == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Verificar configuración
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USUARIO: ${{ secrets.VPS_USUARIO }}
+          VPS_CLAVE_SSH: ${{ secrets.VPS_CLAVE_SSH }}
+          VPS_HUELLA: ${{ secrets.VPS_HUELLA }}
+        run: |
+          for v in VPS_HOST VPS_USUARIO VPS_CLAVE_SSH VPS_HUELLA; do
+            if [ -z "${!v}" ]; then echo "::error::Falta el secreto $v (ver docs/despliegue.md)"; exit 1; fi
+          done
+
+      - name: Actualizar el servidor
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USUARIO: ${{ secrets.VPS_USUARIO }}
+          VPS_CLAVE_SSH: ${{ secrets.VPS_CLAVE_SSH }}
+          VPS_HUELLA: ${{ secrets.VPS_HUELLA }}
+          VPS_RUTA: ${{ secrets.VPS_RUTA }}
+          VPS_PUERTO: ${{ secrets.VPS_PUERTO }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_CLAVE_SSH" > ~/.ssh/id_despliegue
+          chmod 600 ~/.ssh/id_despliegue
+          printf '%s\n' "$VPS_HUELLA" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_despliegue -p "${VPS_PUERTO:-22}" -o StrictHostKeyChecking=yes "$VPS_USUARIO@$VPS_HOST" \
+            "cd '${VPS_RUTA:-/opt/pesv}' && ./deploy/pesv.sh actualizar"

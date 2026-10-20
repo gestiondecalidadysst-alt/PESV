@@ -17,6 +17,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
 import { z } from 'zod';
 import { CuadriculaPasos } from '../components/CuadriculaPasos';
+import { Logo } from '../components/Logo';
 import { Aviso, Boton, Campo, Casilla, Encabezado, Pagina, Selector } from '../components/ui';
 import { api } from '../lib/api';
 import { guardarOrganizacionElegida, useSesion } from '../lib/sesion';
@@ -274,16 +275,5 @@ export function NuevaOrganizacion() {
       />
       <FormularioOrganizacion modo="nueva" />
     </Pagina>
-  );
-}
-
-export function Logo({ claro }: { claro?: boolean }) {
-  return (
-    <Link to="/" className="flex items-center gap-2.5 self-start">
-      <span aria-hidden="true" className="grid size-8 rotate-45 place-items-center rounded-md bg-senal">
-        <span className="-rotate-45 text-sm font-extrabold text-noche">P</span>
-      </span>
-      <span className={`text-lg font-bold ${claro ? 'text-white' : 'text-noche'}`}>PESV</span>
-    </Link>
   );
 }

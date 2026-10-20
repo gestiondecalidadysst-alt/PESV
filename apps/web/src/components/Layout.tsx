@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useConsulta } from '../lib/consultas';
 import { useSesion } from '../lib/sesion';
-import { Logo } from '../pages/Registro';
+import { Logo } from './Logo';
 
 const enlace = ({ isActive }: { isActive: boolean }) =>
   `block rounded-lg px-3 py-2.5 text-sm transition-colors ${
@@ -41,6 +41,7 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/vigia', nombre: 'Reporte VIGIA 2', permiso: 'ver', grupo: 'Verificación' },
   { ruta: '/configuracion/miembros', nombre: 'Miembros y roles', permiso: 'ver', grupo: 'Configuración' },
   { ruta: '/configuracion/ia', nombre: 'Proveedor de IA', permiso: 'configurar', grupo: 'Configuración' },
+  { ruta: '/configuracion/notificaciones', nombre: 'Notificaciones por correo', permiso: 'configurar', grupo: 'Configuración' },
   { ruta: '/configuracion/integraciones', nombre: 'Integraciones n8n', permiso: 'configurar', grupo: 'Configuración' },
   { ruta: '/configuracion/suscripcion', nombre: 'Suscripción', permiso: 'ver', grupo: 'Configuración' },
   { ruta: '/plataforma', nombre: 'Panel de la plataforma', permiso: null, grupo: 'Plataforma', soloPlataforma: true },
@@ -117,16 +118,21 @@ export function Layout() {
             <div className="mt-4 flex flex-col gap-2 border-t border-asfalto px-3 pt-4">
               <p className="text-sm font-semibold text-white">{yo.usuario.nombre}</p>
               <p className="break-all text-xs text-[#8c99ab]">{yo.usuario.email}</p>
+              <div className="mt-1 flex flex-wrap gap-2">
+              <NavLink to="/mi-cuenta" className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-semibold text-[#c9d2de] ring-1 ring-asfalto hover:text-white">
+                Mi cuenta
+              </NavLink>
               <button
                 type="button"
                 onClick={async () => {
                   await salir();
                   navigate('/ingresar');
                 }}
-                className="mt-1 min-h-10 self-start rounded-lg px-3 text-sm font-semibold text-[#c9d2de] ring-1 ring-asfalto hover:text-white"
+                className="min-h-10 rounded-lg px-3 text-sm font-semibold text-[#c9d2de] ring-1 ring-asfalto hover:text-white"
               >
                 Salir
               </button>
+              </div>
             </div>
           )}
         </div>

@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ESTADOS_SUSCRIPCION, FUNCIONES_PLAN, NIVEL_LABEL, NIVELES, planSchema, type EstadoSuscripcion, type FuncionPlan, type Nivel, type PlanInput } from '@pesv/shared';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { Controller, useForm } from 'react-hook-form';
 import type { z } from 'zod';
-import { AreaTexto, Aviso, Boton, Campo, Cargando, Casilla, Cifra, Encabezado, Insignia, Pagina, Pestanas, Selector, Subtitulo, Tabla, Tarjeta, Vacio, fecha, td, th } from '../components/ui';
+import { AreaTexto, Aviso, Boton, Campo, Cargando, Casilla, Cifra, Encabezado, Insignia, Pagina, Pestanas, Selector, Subtitulo, Tabla, Tarjeta, Vacio, fecha, fechaHora, td, th } from '../components/ui';
 import { api } from '../lib/api';
 import { useAccion, useConsulta } from '../lib/consultas';
 
@@ -89,12 +90,14 @@ export function Suscripcion() {
 // Panel de la plataforma --------------------------------------------------------
 
 export function Plataforma() {
-  const [pestana, setPestana] = useState<'organizaciones' | 'planes' | 'administradores'>('organizaciones');
+  const [parametros] = useSearchParams();
+  const errorEnlazado = parametros.get('errores');
+  const [pestana, setPestana] = useState<'organizaciones' | 'planes' | 'errores' | 'administradores'>(errorEnlazado ? 'errores' : 'organizaciones');
   return (
     <Pagina>
       <Encabezado
         titulo="Panel de la plataforma"
-        descripcion="Planes, límites y precios configurables (nada está fijo en el código), suscripción de cada organización y administradores."
+        descripcion="Planes, límites y precios configurables (nada está fijo en el código), suscripción de cada organización, registro de errores y administradores."
       />
       <Pestanas
         valor={pestana}
@@ -102,11 +105,13 @@ export function Plataforma() {
         opciones={[
           { id: 'organizaciones', nombre: 'Organizaciones' },
           { id: 'planes', nombre: 'Planes' },
+          { id: 'errores', nombre: 'Errores' },
           { id: 'administradores', nombre: 'Administradores' },
         ]}
       />
       {pestana === 'organizaciones' && <Organizaciones />}
       {pestana === 'planes' && <Planes />}
+      {pestana === 'errores' && <Errores abierto={errorEnlazado} />}
       {pestana === 'administradores' && <Administradores />}
     </Pagina>
   );
@@ -332,5 +337,124 @@ function Administradores() {
       </div>
       <Aviso error={cambiar.error ?? admins.error} />
     </Tarjeta>
+  );
+}
+
+// Registro de errores -------------------------------------------------------------
+
+type EstadoError = 'abierto' | 'resuelto' | 'ignorado';
+interface GrupoError {
+  huella: string;
+  fuente: 'api' | 'web' | 'tarea';
+  mensaje: string;
+  estado: EstadoError;
+  ocurrencias: number;
+  primeraVez: string;
+  ultimaVez: string;
+  ultimas24h: number;
+}
+interface Ocurrencia {
+  id: number;
+  mensaje: string;
+  pila: string | null;
+  metodo: string | null;
+  ruta: string | null;
+  estado: number | null;
+  idSolicitud: string | null;
+  usuarioId: string | null;
+  organizacionId: string | null;
+  agenteUsuario: string | null;
+  contexto: Record<string, unknown>;
+  fecha: string;
+}
+const FUENTE_ERROR = { api: 'API', web: 'Web', tarea: 'Tareas' } as const;
+const TONO_ERROR = { abierto: 'peligro', resuelto: 'exito', ignorado: 'neutro' } as const;
+const TEXTO_ERROR = { abierto: 'Abierto', resuelto: 'Resuelto', ignorado: 'Ignorado' } as const;
+
+function Errores({ abierto }: { abierto: string | null }) {
+  const [estado, setEstado] = useState<EstadoError | 'todos'>(abierto ? 'todos' : 'abierto');
+  const [seleccion, setSeleccion] = useState<string | null>(abierto);
+  const grupos = useConsulta<GrupoError[]>(['plataforma', 'errores', estado], `/plataforma/errores${estado === 'todos' ? '' : `?estado=${estado}`}`);
+  return (
+    <>
+      <p className="text-sm text-gris">
+        Errores inesperados de la API, de la aplicación web y de las tareas programadas, agrupados por causa. Los administradores de la plataforma reciben
+        un correo cuando aparece uno nuevo o vuelve uno resuelto. Las ocurrencias se guardan 30 días.
+      </p>
+      <Selector id="estado-errores" etiqueta="Mostrar" className="max-w-48" value={estado} onChange={(e) => setEstado(e.target.value as typeof estado)}>
+        <option value="abierto">Abiertos</option>
+        <option value="resuelto">Resueltos</option>
+        <option value="ignorado">Ignorados</option>
+        <option value="todos">Todos</option>
+      </Selector>
+      {grupos.isPending ? <Cargando /> : grupos.data?.length ? (
+        <ul className="flex flex-col gap-3">
+          {grupos.data.map((g) => (
+            <li key={g.huella}>
+              <Tarjeta>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-[1_1_20rem] flex-col gap-1">
+                    <div className="flex flex-wrap gap-2">
+                      <Insignia tono={TONO_ERROR[g.estado]}>{TEXTO_ERROR[g.estado]}</Insignia>
+                      <Insignia>{FUENTE_ERROR[g.fuente]}</Insignia>
+                    </div>
+                    <p className="break-words font-semibold text-noche">{g.mensaje}</p>
+                    <p className="text-[13px] text-gris">
+                      {g.ocurrencias} ocurrencias · {g.ultimas24h} en las últimas 24 h · última {fechaHora(g.ultimaVez)} · primera {fechaHora(g.primeraVez)}
+                    </p>
+                  </div>
+                  <Boton variante="texto" onClick={() => setSeleccion(seleccion === g.huella ? null : g.huella)}>{seleccion === g.huella ? 'Ocultar' : 'Ver detalle'}</Boton>
+                </div>
+                {seleccion === g.huella && <DetalleError grupo={g} />}
+              </Tarjeta>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <Vacio titulo={estado === 'abierto' ? 'Sin errores abiertos' : 'Sin errores'}>Cuando algo falle en la plataforma aparecerá aquí.</Vacio>
+      )}
+      <Aviso error={grupos.error} />
+    </>
+  );
+}
+
+function DetalleError({ grupo }: { grupo: GrupoError }) {
+  const ocurrencias = useConsulta<Ocurrencia[]>(['plataforma', 'errores', 'detalle', grupo.huella], `/plataforma/errores/${grupo.huella}`);
+  const cambiar = useAccion((estado: EstadoError) => api.patch(`/plataforma/errores/${grupo.huella}`, { estado }));
+  const ultima = ocurrencias.data?.[0];
+  return (
+    <div className="flex flex-col gap-3 border-t border-linea pt-3">
+      <div className="flex flex-wrap gap-2">
+        {grupo.estado !== 'resuelto' && <Boton cargando={cambiar.isPending} onClick={() => cambiar.mutate('resuelto')}>Marcar resuelto</Boton>}
+        {grupo.estado !== 'ignorado' && <Boton variante="secundario" onClick={() => cambiar.mutate('ignorado')}>Ignorar</Boton>}
+        {grupo.estado !== 'abierto' && <Boton variante="secundario" onClick={() => cambiar.mutate('abierto')}>Reabrir</Boton>}
+      </div>
+      <Aviso error={cambiar.error ?? ocurrencias.error} />
+      {ocurrencias.isPending ? <Cargando /> : ultima && (
+        <>
+          <dl className="grid gap-x-6 gap-y-1 text-[13px] sm:grid-cols-2">
+            {([
+              ['Ruta', ultima.ruta ? `${ultima.metodo ?? ''} ${ultima.ruta}`.trim() : '—'],
+              ['Código HTTP', ultima.estado ?? '—'],
+              ['Código de solicitud', ultima.idSolicitud ?? '—'],
+              ['Organización', ultima.organizacionId ?? '—'],
+              ['Usuario', ultima.usuarioId ?? '—'],
+              ['Navegador', ultima.agenteUsuario ?? '—'],
+            ] as const).map(([k, v]) => (
+              <div key={k} className="flex gap-2"><dt className="text-gris">{k}:</dt><dd className="break-all">{v}</dd></div>
+            ))}
+          </dl>
+          {ultima.pila && <pre className="max-h-72 overflow-auto rounded-lg bg-noche p-3 text-[12px] leading-relaxed text-[#e6ebf2]">{ultima.pila}</pre>}
+          <details className="text-[13px]">
+            <summary className="cursor-pointer font-semibold text-[#1d4e89]">Últimas {ocurrencias.data!.length} ocurrencias</summary>
+            <ul className="mt-2 flex flex-col gap-1">
+              {ocurrencias.data!.map((o) => (
+                <li key={o.id} className="text-gris">{fechaHora(o.fecha)} · {o.ruta ?? '—'} · {o.idSolicitud ?? 'sin código'}</li>
+              ))}
+            </ul>
+          </details>
+        </>
+      )}
+    </div>
   );
 }

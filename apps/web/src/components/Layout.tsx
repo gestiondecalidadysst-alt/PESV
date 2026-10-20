@@ -1,7 +1,9 @@
 import type { Permiso } from '@pesv/shared';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
+import { urlApi } from '../lib/api';
 import { useConsulta } from '../lib/consultas';
+import { EVENTO_LOGO } from '../lib/marca';
 import { useSesion } from '../lib/sesion';
 import { Logo } from './Logo';
 
@@ -41,6 +43,7 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/vigia', nombre: 'Reporte VIGIA 2', permiso: 'ver', grupo: 'Verificación' },
   { ruta: '/configuracion/miembros', nombre: 'Miembros y roles', permiso: 'ver', grupo: 'Configuración' },
   { ruta: '/configuracion/ia', nombre: 'Proveedor de IA', permiso: 'configurar', grupo: 'Configuración' },
+  { ruta: '/configuracion/formato', nombre: 'Formato de documentos', permiso: 'ver', grupo: 'Configuración' },
   { ruta: '/configuracion/notificaciones', nombre: 'Notificaciones por correo', permiso: 'configurar', grupo: 'Configuración' },
   { ruta: '/configuracion/integraciones', nombre: 'Integraciones n8n', permiso: 'configurar', grupo: 'Configuración' },
   { ruta: '/configuracion/suscripcion', nombre: 'Suscripción', permiso: 'ver', grupo: 'Configuración' },
@@ -80,6 +83,7 @@ export function Layout() {
             if ((e.target as HTMLElement).closest('a')) setMenuAbierto(false);
           }}
         >
+          {organizacion && <LogoOrganizacion key={organizacion.id} />}
           {yo && yo.organizaciones.length > 1 ? (
             <label className="flex flex-col gap-1 px-2 pb-3">
               <span className="text-xs font-semibold text-[#8c99ab]">Organización</span>
@@ -146,6 +150,29 @@ export function Layout() {
         )}
         <Outlet />
       </main>
+    </div>
+  );
+}
+
+/**
+ * Logo de la organización sobre fondo blanco en el menú. Si no hay logo (404) no se muestra. Se
+ * recarga cuando se cambia en Formato de documentos.
+ */
+function LogoOrganizacion() {
+  const [version, setVersion] = useState(0);
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const alCambiar = () => {
+      setVisible(true);
+      setVersion((v) => v + 1);
+    };
+    window.addEventListener(EVENTO_LOGO, alCambiar);
+    return () => window.removeEventListener(EVENTO_LOGO, alCambiar);
+  }, []);
+  if (!visible) return null;
+  return (
+    <div className="mx-2 mb-3 grid h-16 place-items-center rounded-lg bg-white p-2">
+      <img src={urlApi(`/org/logo?v=${version}`)} alt="Logo de la organización" className="max-h-full max-w-full object-contain" onError={() => setVisible(false)} />
     </div>
   );
 }

@@ -44,6 +44,7 @@ const Recuperar = cargar(() => import('./pages/Cuenta'), 'Recuperar');
 const Restablecer = cargar(() => import('./pages/Cuenta'), 'Restablecer');
 const MiCuenta = cargar(() => import('./pages/Cuenta'), 'MiCuenta');
 const Notificaciones = cargar(() => import('./pages/Notificaciones'), 'Notificaciones');
+const FormatoDocumentos = cargar(() => import('./pages/FormatoDocumentos'), 'FormatoDocumentos');
 
 const conCarga = (pagina: ReactNode) => <Suspense fallback={<Cargando />}>{pagina}</Suspense>;
 
@@ -114,6 +115,7 @@ const router = createBrowserRouter([
           { path: 'configuracion/integraciones', element: conCarga(<Integraciones />) },
           { path: 'configuracion/miembros', element: conCarga(<Miembros />) },
           { path: 'configuracion/notificaciones', element: conCarga(<Notificaciones />) },
+          { path: 'configuracion/formato', element: conCarga(<FormatoDocumentos />) },
           { path: 'mi-cuenta', element: conCarga(<MiCuenta />) },
           { path: 'organizaciones/nueva', element: conCarga(<NuevaOrganizacion />) },
           { path: '*', element: <Navigate to="/" replace /> },

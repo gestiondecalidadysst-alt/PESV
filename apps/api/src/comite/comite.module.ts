@@ -47,7 +47,6 @@ import {
   evidences,
   meetingAttendance,
   meetingDecisions,
-  organizations,
   planActivities,
   stepCompliance,
   type PuntoAgenda,
@@ -59,6 +58,7 @@ import { IaModule } from '../ia/ia.module.js';
 import { IaService } from '../ia/ia.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { generarActaPdf } from './acta-pdf.js';
+import { FormatoService } from '../documentos/formato.service.js';
 
 const punto = (titulo: string, origen?: string): PuntoAgenda => ({ id: randomUUID().slice(0, 8), titulo, notas: '', origen });
 const fechaCorta = (d: Date) => new Intl.DateTimeFormat('es-CO', { dateStyle: 'medium', timeZone: 'America/Bogota' }).format(d);
@@ -72,6 +72,7 @@ export class ComiteService {
     private readonly flota: FlotaService,
     private readonly storage: StorageService,
     private readonly ia: IaService,
+    private readonly formato: FormatoService,
   ) {}
 
   // Integrantes -------------------------------------------------------------
@@ -374,10 +375,7 @@ export class ComiteService {
     const d = await this.detalle(orgId, id);
     if (d.estado !== 'en_curso') throw new BadRequestException('Solo se puede cerrar una reunión en curso');
     if (!d.hayQuorum) throw new BadRequestException(`No hay quórum: se necesitan ${d.quorumRequerido} presentes y hay ${d.presentes}`);
-    const org = await this.database.withTenant(orgId, async (tx) => (await tx.select().from(organizations).where(eq(organizations.id, orgId)))[0]!);
-    const pdf = await generarActaPdf({
-      organizacion: org.name,
-      nit: org.nit,
+    const pdf = await generarActaPdf(await this.formato.contexto(orgId, 'acta_comite'), {
       fecha: d.fecha,
       lugar: d.lugar,
       tipo: d.tipo,

@@ -30,6 +30,9 @@ export const organizations = pgTable('organizations', {
   actionRadius: text('action_radius'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  logoKey: text('logo_key'),
+  logoMime: text('logo_mime'),
+  logoUpdatedAt: timestamp('logo_updated_at', { withTimezone: true }),
 });
 
 export const classifications = pgTable('classifications', {
@@ -700,3 +703,39 @@ export const errorEvents = pgTable('error_events', {
   context: jsonb('context').notNull().default({}),
   createdAt: creado(),
 });
+
+// Versión 2 · Formato documental ------------------------------------------------------
+
+const firmantes = () => ({
+  preparedName: text('prepared_name'),
+  preparedRole: text('prepared_role'),
+  reviewedName: text('reviewed_name'),
+  reviewedRole: text('reviewed_role'),
+  approvedName: text('approved_name'),
+  approvedRole: text('approved_role'),
+});
+
+export const documentSettings = pgTable('document_settings', {
+  organizationId: uuid('organization_id').primaryKey(),
+  codePrefix: text('code_prefix').notNull().default('PESV'),
+  footerNote: text('footer_note'),
+  primaryColor: text('primary_color').notNull().default('#0F1B2D'),
+  ...firmantes(),
+  updatedBy: uuid('updated_by'),
+  updatedAt: actualizado(),
+});
+
+export const documentFormats = pgTable(
+  'document_formats',
+  {
+    organizationId: org(),
+    docType: text('doc_type').notNull(),
+    code: text('code').notNull(),
+    version: integer('version').notNull().default(1),
+    versionDate: date('version_date').notNull(),
+    ...firmantes(),
+    updatedBy: uuid('updated_by'),
+    updatedAt: actualizado(),
+  },
+  (t) => [primaryKey({ columns: [t.organizationId, t.docType] })],
+);

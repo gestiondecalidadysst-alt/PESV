@@ -1,8 +1,7 @@
-import PDFDocument from 'pdfkit';
+import type { ContextoDocumento } from '../documentos/formato.service.js';
+import { DocumentoPdf } from '../documentos/pdf.js';
 
 export interface DatosActa {
-  organizacion: string;
-  nit: string;
   fecha: Date;
   lugar: string | null;
   tipo: string;
@@ -17,55 +16,50 @@ export interface DatosActa {
 const fechaLarga = (d: Date) =>
   new Intl.DateTimeFormat('es-CO', { dateStyle: 'full', timeStyle: 'short', timeZone: 'America/Bogota' }).format(d);
 
-/** Genera el acta del comité en PDF (el contenido queda fijo antes de las firmas). */
-export function generarActaPdf(d: DatosActa): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: 'LETTER', margin: 56, info: { Title: `Acta del comité de seguridad vial · ${d.organizacion}` } });
-    const partes: Buffer[] = [];
-    doc.on('data', (c: Buffer) => partes.push(c));
-    doc.on('end', () => resolve(Buffer.concat(partes)));
-    doc.on('error', reject);
+/** Acta del comité en PDF con el formato del sistema de gestión (el contenido queda fijo antes de las firmas). */
+export function generarActaPdf(ctx: ContextoDocumento, d: DatosActa): Promise<Buffer> {
+  const pdf = new DocumentoPdf(ctx);
+  const presentes = d.asistentes.filter((a) => a.presente);
+  pdf.datos([
+    ['Tipo de reunión', d.tipo === 'ordinaria' ? 'Ordinaria' : 'Extraordinaria'],
+    ['Fecha y hora', fechaLarga(d.fecha)],
+    ['Lugar', d.lugar ?? '—'],
+    ['Quórum', `${presentes.length} de ${d.asistentes.length} (requerido ${d.quorumRequerido}) · ${presentes.length >= d.quorumRequerido ? 'hay quórum' : 'sin quórum'}`],
+  ]);
 
-    const titulo = (t: string) => doc.moveDown(0.8).font('Helvetica-Bold').fontSize(12).fillColor('#0f1b2d').text(t).moveDown(0.3);
-    const parrafo = (t: string) => doc.font('Helvetica').fontSize(10).fillColor('#1a2233').text(t, { align: 'left' });
+  pdf.titulo('Asistencia');
+  pdf.tabla(
+    [{ titulo: 'Nombre', ancho: 5 }, { titulo: 'Cargo', ancho: 4 }, { titulo: 'Rol en el comité', ancho: 3 }, { titulo: 'Asistencia', ancho: 2, alinear: 'center' }],
+    d.asistentes.map((a) => [a.nombre, a.cargo ?? '—', a.rol.replace('_', ' '), { texto: a.presente ? 'Presente' : 'Ausente', alinear: 'center' }]),
+  );
 
-    doc.font('Helvetica-Bold').fontSize(16).fillColor('#0f1b2d').text('Acta de reunión del comité de seguridad vial');
-    doc.moveDown(0.3).font('Helvetica').fontSize(10).fillColor('#5b6576');
-    doc.text(`${d.organizacion} · NIT ${d.nit}`);
-    doc.text(`Reunión ${d.tipo} · ${fechaLarga(d.fecha)}${d.lugar ? ` · ${d.lugar}` : ''}`);
-
-    const presentes = d.asistentes.filter((a) => a.presente);
-    titulo('Asistencia y quórum');
-    parrafo(`Asistieron ${presentes.length} de ${d.asistentes.length} integrantes. Quórum requerido: ${d.quorumRequerido}. ${presentes.length >= d.quorumRequerido ? 'Hay quórum para deliberar y decidir.' : 'No hubo quórum.'}`);
-    doc.moveDown(0.3);
-    for (const a of d.asistentes) parrafo(`${a.presente ? 'Presente' : 'Ausente'} · ${a.nombre}${a.cargo ? `, ${a.cargo}` : ''} (${a.rol.replace('_', ' ')})`);
-
-    titulo('Desarrollo de la reunión');
-    d.puntos.forEach((p, i) => {
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#1a2233').text(`${i + 1}. ${p.titulo}`);
-      parrafo(p.notas.trim() || 'Sin observaciones registradas.');
-      doc.moveDown(0.4);
-    });
-
-    if (d.decisiones.length) {
-      titulo('Decisiones');
-      d.decisiones.forEach((x, i) =>
-        parrafo(`${i + 1}. ${x.texto} · ${x.aprobada ? 'Aprobada' : 'No aprobada'} (a favor ${x.aFavor}, en contra ${x.enContra}, abstenciones ${x.abstenciones})`),
-      );
-    }
-
-    if (d.compromisos.length) {
-      titulo('Compromisos');
-      d.compromisos.forEach((c, i) => parrafo(`${i + 1}. ${c.descripcion} · Responsable: ${c.responsable} · Fecha: ${c.venceEl}`));
-    }
-
-    if (d.resumen?.trim()) {
-      titulo('Relato del acta');
-      parrafo(d.resumen.trim());
-    }
-
-    titulo('Firmas');
-    parrafo('Los asistentes firman electrónicamente en la plataforma. La constancia de cada firma (fecha, hora y huella del documento) queda en el registro de auditoría.');
-    doc.end();
+  pdf.titulo('Desarrollo de la reunión');
+  d.puntos.forEach((p, i) => {
+    pdf.parrafo(`${i + 1}. ${p.titulo}`, { negrita: true }).parrafo(p.notas.trim() || 'Sin observaciones registradas.').espacio(0.4);
   });
+
+  if (d.decisiones.length) {
+    pdf.titulo('Decisiones');
+    pdf.tabla(
+      [{ titulo: '#', ancho: 1 }, { titulo: 'Decisión', ancho: 10 }, { titulo: 'Votación', ancho: 4 }, { titulo: 'Resultado', ancho: 3 }],
+      d.decisiones.map((x, i) => [String(i + 1), x.texto, `A favor ${x.aFavor} · en contra ${x.enContra} · abstenciones ${x.abstenciones}`, x.aprobada ? 'Aprobada' : 'No aprobada']),
+    );
+  }
+
+  if (d.compromisos.length) {
+    pdf.titulo('Compromisos');
+    pdf.tabla(
+      [{ titulo: '#', ancho: 1 }, { titulo: 'Compromiso', ancho: 10 }, { titulo: 'Responsable', ancho: 4 }, { titulo: 'Fecha límite', ancho: 3 }],
+      d.compromisos.map((c, i) => [String(i + 1), c.descripcion, c.responsable, c.venceEl]),
+    );
+  }
+
+  if (d.resumen?.trim()) {
+    pdf.titulo('Relato del acta');
+    pdf.textoConFormato(d.resumen.trim());
+  }
+
+  pdf.titulo('Firmas');
+  pdf.parrafo('Los asistentes firman electrónicamente en la plataforma. La constancia de cada firma (fecha, hora y huella del documento) queda en el registro de auditoría.');
+  return pdf.terminar();
 }

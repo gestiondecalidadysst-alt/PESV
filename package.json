@@ -1,0 +1,28 @@
+{
+  "name": "pesv",
+  "private": true,
+  "description": "Plataforma SaaS para gestionar el PESV (Res. 40595 de 2022) e ISO 39001, impulsada por IA",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "eslint .",
+    "db:migrate": "pnpm --filter @pesv/api db:migrate",
+    "db:seed": "pnpm --filter @pesv/api db:seed"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "turbo": "^2.11.9",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.0"
+  }
+}

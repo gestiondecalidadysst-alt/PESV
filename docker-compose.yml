@@ -1,0 +1,45 @@
+# Entorno completo local: docker compose up --build  →  http://localhost:8080
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pesv_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pesv_owner_dev}
+      POSTGRES_DB: pesv
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pesv_owner -d pesv"]
+      interval: 5s
+      retries: 10
+
+  migrate:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ["sh", "-c", "node scripts/migrate.mjs && node scripts/seed.mjs"]
+    environment:
+      DATABASE_ADMIN_URL: postgres://pesv_owner:${POSTGRES_PASSWORD:-pesv_owner_dev}@db:5432/pesv
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-pesv_app_dev}
+    depends_on:
+      db: { condition: service_healthy }
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    environment:
+      DATABASE_URL: postgres://pesv_app:${APP_DB_PASSWORD:-pesv_app_dev}@db:5432/pesv
+      CORS_ORIGINS: http://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

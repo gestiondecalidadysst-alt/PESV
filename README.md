@@ -4,8 +4,8 @@ Plataforma SaaS para gestionar el Plan Estratégico de Seguridad Vial (Resoluci�
 organizaciones colombianas de cualquier misionalidad y tamaño, con inteligencia artificial elegida por cada cliente
 e integración con n8n.
 
-> Estado: **Fase 0** (cimientos). Incluye el catálogo normativo, el motor de clasificación, la base de datos
-> multiempresa y el asistente de clasificación de punta a punta. Ver [Hoja de ruta](#hoja-de-ruta).
+> Estado: **Fase 1 completa** (MVP). Cuentas y roles, evidencias por paso, flota y conductores, preoperacional
+> móvil sin conexión, tablero, IA elegida por el cliente e integración con n8n. Ver [Hoja de ruta](#hoja-de-ruta).
 
 ## Qué hace hoy
 
@@ -71,7 +71,26 @@ pnpm test        # motor de clasificación, API de punta a punta y asistente web
 Las pruebas de la API necesitan una base migrada y sembrada, indicada con `DATABASE_URL` y `DATABASE_ADMIN_URL`
 (apunta a una base de pruebas, por ejemplo `pesv_test`). Sin esas variables se omiten.
 
-## API (Fase 0)
+## API
+
+Rutas públicas: `/api/health`, `/api/catalog/*`, `/api/classification/preview`, `/api/auth/registro`,
+`/api/auth/ingresar`. El resto exige sesión (cookie `pesv_sesion`, httpOnly) o un token de API (`Bearer pesv_…`),
+y las rutas `/api/org/*` trabajan sobre la organización del encabezado `x-organization-id`, verificando la
+membresía y el permiso del rol.
+
+| Módulo | Rutas principales |
+| --- | --- |
+| Autenticación | `POST /auth/registro`, `POST /auth/ingresar`, `POST /auth/salir`, `GET /auth/yo` |
+| Organización | `GET /org`, `GET /org/pasos`, `PATCH /org/pasos/:n`, `GET/POST /org/reclasificacion`, `POST /organizations` |
+| Miembros | `GET/POST /org/miembros`, `DELETE /org/miembros/:id` |
+| Evidencias | `GET/POST /org/evidencias`, `POST /org/evidencias/:id/decision`, `GET /org/evidencias/:id/archivo` |
+| Flota | `GET/POST/PATCH /org/vehiculos`, `GET/POST/PATCH /org/conductores`, `GET /org/alertas` |
+| Preoperacional | `GET /org/inspecciones/plantilla/:vehiculo`, `POST /org/inspecciones`, `GET /org/inspecciones` |
+| Tablero | `GET /org/tablero` |
+| IA | `GET/PUT /org/ia/config`, `POST /org/ia/probar`, `POST /org/ia/copiloto`, `POST /org/ia/redactar`, `POST /org/ia/diagnostico`, `POST /org/ia/lector` |
+| Integraciones | `/org/integraciones/webhooks`, `/org/integraciones/tokens`, `GET /org/integraciones/entregas` |
+
+### Fase 0 (referencia)
 
 | Método | Ruta | Qué hace |
 | --- | --- | --- |

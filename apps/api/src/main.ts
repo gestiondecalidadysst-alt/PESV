@@ -1,15 +1,25 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module.js';
 import { config } from './config.js';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+export function configurarApp(app: NestExpressApplication) {
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: config.corsOrigins });
+  app.use(cookieParser());
+  app.set('trust proxy', 1);
+  app.useBodyParser('json', { limit: '1mb' });
+  app.enableCors({ origin: config.corsOrigins, credentials: true });
+  return app;
+}
+
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  configurarApp(app);
   app.enableShutdownHooks();
   await app.listen(config.port);
   console.log(`API PESV escuchando en http://localhost:${config.port}/api`);
 }
 
-void bootstrap();
+if (process.env.VITEST === undefined) void bootstrap();

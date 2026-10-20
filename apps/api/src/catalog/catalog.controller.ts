@@ -1,3 +1,4 @@
+import { Publico } from '../auth/decorators.js';
 import { BadRequestException, Controller, Get, Query } from '@nestjs/common';
 import {
   CLAUSULAS_ISO_39001,
@@ -12,6 +13,7 @@ import {
   type Nivel,
 } from '@pesv/shared';
 
+@Publico()
 @Controller('catalog')
 export class CatalogController {
   @Get('pesv')

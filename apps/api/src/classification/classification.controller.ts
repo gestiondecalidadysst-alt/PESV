@@ -1,3 +1,4 @@
+import { Publico } from '../auth/decorators.js';
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import {
   clasificar,
@@ -6,6 +7,7 @@ import {
 } from '@pesv/shared';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 
+@Publico()
 @Controller('classification')
 export class ClassificationController {
   /** Calcula nivel y pasos aplicables sin guardar nada. */

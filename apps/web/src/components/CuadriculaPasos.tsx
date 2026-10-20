@@ -1,4 +1,5 @@
 import { FASE_LABEL, FASES, PASOS_PESV, type EstadoPaso } from '@pesv/shared';
+import { Link } from 'react-router';
 
 const ESTILO: Record<EstadoPaso, { caja: string; texto: string; etiqueta: string }> = {
   pendiente: { caja: 'bg-white border-noche/25', texto: 'text-noche', etiqueta: 'Pendiente' },
@@ -22,10 +23,12 @@ interface Props {
   etiquetaPendiente?: string;
   /** Pinta los pasos pendientes en azul noche (en el asistente, para que los que aplican salten a la vista). */
   resaltarPendientes?: boolean;
+  /** Si se indica, los pasos que aplican enlazan a su detalle. */
+  enlace?: (numero: number) => string;
 }
 
 /** Los 24 pasos agrupados por fase PHVA. Es el elemento visual central de la plataforma. */
-export function CuadriculaPasos({ estados, etiquetaPendiente, resaltarPendientes }: Props) {
+export function CuadriculaPasos({ estados, etiquetaPendiente, resaltarPendientes, enlace }: Props) {
   return (
     <div className="flex flex-col gap-5">
       {FASES.map((fase) => {
@@ -46,15 +49,23 @@ export function CuadriculaPasos({ estados, etiquetaPendiente, resaltarPendientes
                     : ESTILO[estado];
                 const etiqueta =
                   estado === 'pendiente' && etiquetaPendiente ? etiquetaPendiente : e.etiqueta;
-                return (
-                  <li
-                    key={p.numero}
-                    title={`${p.numero}. ${p.nombre}`}
-                    className={`flex min-h-[4.5rem] flex-col justify-between rounded-lg border px-2.5 py-2 transition-colors duration-300 ${e.caja} ${e.texto}`}
-                  >
+                const clases = `flex min-h-[4.5rem] flex-col justify-between rounded-lg border px-2.5 py-2 transition-colors duration-300 ${e.caja} ${e.texto}`;
+                const contenido = (
+                  <>
                     <span className="text-xl font-extrabold leading-none">{p.numero}</span>
                     <span className="text-[11px] font-semibold leading-tight">{etiqueta}</span>
                     <span className="sr-only">{p.nombre}</span>
+                  </>
+                );
+                return (
+                  <li key={p.numero} title={`${p.numero}. ${p.nombre}`} className="flex">
+                    {enlace && estado !== 'no_aplica' ? (
+                      <Link to={enlace(p.numero)} className={`${clases} w-full hover:border-noche`}>
+                        {contenido}
+                      </Link>
+                    ) : (
+                      <div className={`${clases} w-full`}>{contenido}</div>
+                    )}
                   </li>
                 );
               })}

@@ -1,11 +1,3 @@
-import type {
-  CrearOrganizacionInput,
-  EstadoPaso,
-  Fase,
-  Nivel,
-  ResultadoClasificacion,
-} from '@pesv/shared';
-
 const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 
 export class ApiError extends Error {
@@ -18,88 +10,58 @@ export class ApiError extends Error {
   }
 }
 
-async function solicitar<T>(
-  ruta: string,
-  init: RequestInit & { organizacionId?: string } = {},
-): Promise<T> {
-  const { organizacionId, headers, ...resto } = init;
+let organizacionActiva: string | null = null;
+let alExpirarSesion: (() => void) | null = null;
+
+/** La sesión fija la organización activa; todas las peticiones la envían en el encabezado. */
+export function fijarOrganizacion(id: string | null) {
+  organizacionActiva = id;
+}
+export function alPerderSesion(fn: () => void) {
+  alExpirarSesion = fn;
+}
+export const urlApi = (ruta: string) =>
+  `${BASE}${ruta}${organizacionActiva ? `${ruta.includes('?') ? '&' : '?'}org=${organizacionActiva}` : ''}`;
+
+async function solicitar<T>(ruta: string, init: RequestInit = {}): Promise<T> {
+  const esFormulario = init.body instanceof FormData;
   let res: Response;
   try {
     res = await fetch(`${BASE}${ruta}`, {
-      ...resto,
+      credentials: 'include',
+      ...init,
       headers: {
-        'content-type': 'application/json',
-        ...(organizacionId ? { 'x-organization-id': organizacionId } : {}),
-        ...headers,
+        ...(esFormulario || !init.body ? {} : { 'content-type': 'application/json' }),
+        ...(organizacionActiva ? { 'x-organization-id': organizacionActiva } : {}),
+        ...init.headers,
       },
     });
   } catch {
-    throw new ApiError(
-      0,
-      'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.',
-    );
+    throw new ApiError(0, 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.');
   }
+  if (res.status === 204) return undefined as T;
   const cuerpo = await res.json().catch(() => ({}));
   if (!res.ok) {
+    if (res.status === 401 && !ruta.startsWith('/auth/')) alExpirarSesion?.();
     const mensaje = Array.isArray(cuerpo.message) ? cuerpo.message.join('. ') : cuerpo.message;
-    throw new ApiError(
-      res.status,
-      mensaje ?? 'El servidor no pudo completar la solicitud.',
-      cuerpo.errores,
-    );
+    throw new ApiError(res.status, mensaje ?? 'El servidor no pudo completar la solicitud.', cuerpo.errores);
   }
   return cuerpo as T;
 }
 
-export interface Organizacion {
-  id: string;
-  name: string;
-  nit: string;
-  misionalidad: 1 | 2;
-  modalityId: string | null;
-  actionRadius: string | null;
-  createdAt: string;
-}
-
-export interface Clasificacion {
-  vehicles: number;
-  drivers: number;
-  level: Nivel;
-  levelByVehicles: Nivel | null;
-  levelByDrivers: Nivel | null;
-  reportsToSupertransporte: boolean;
-  applicableSteps: number[];
-  createdAt: string;
-}
-
-export interface DetalleOrganizacion {
-  organizacion: Organizacion;
-  clasificacion: Clasificacion | null;
-  resumen: {
-    aplicables: number;
-    hechos: number;
-    enCurso: number;
-    pendientes: number;
-    porcentajeCumplimiento: number;
-  };
-}
-
-export interface EstadoDePaso {
-  numero: number;
-  fase: Fase;
-  nombre: string;
-  estado: EstadoPaso;
-  clausulasIso: string[];
-}
-
 export const api = {
-  crearOrganizacion: (datos: CrearOrganizacionInput) =>
-    solicitar<{ organizacion: Organizacion; resultado: ResultadoClasificacion }>('/organizations', {
-      method: 'POST',
-      body: JSON.stringify(datos),
-    }),
-  organizacion: (id: string) =>
-    solicitar<DetalleOrganizacion>(`/organizations/${id}`, { organizacionId: id }),
-  pasos: (id: string) =>
-    solicitar<EstadoDePaso[]>(`/organizations/${id}/steps`, { organizacionId: id }),
+  get: <T>(ruta: string) => solicitar<T>(ruta),
+  post: <T>(ruta: string, datos?: unknown) =>
+    solicitar<T>(ruta, { method: 'POST', body: datos instanceof FormData ? datos : datos === undefined ? undefined : JSON.stringify(datos) }),
+  put: <T>(ruta: string, datos: unknown) => solicitar<T>(ruta, { method: 'PUT', body: JSON.stringify(datos) }),
+  patch: <T>(ruta: string, datos: unknown) => solicitar<T>(ruta, { method: 'PATCH', body: JSON.stringify(datos) }),
+  delete: <T = void>(ruta: string) => solicitar<T>(ruta, { method: 'DELETE' }),
 };
+
+/** Mensaje legible de cualquier error de una petición. */
+export function mensajeError(error: unknown): string {
+  if (error instanceof ApiError) {
+    return error.errores.length ? `${error.message}: ${error.errores.map((e) => e.mensaje).join('. ')}` : error.message;
+  }
+  return 'Ocurrió un error inesperado. Inténtalo de nuevo.';
+}

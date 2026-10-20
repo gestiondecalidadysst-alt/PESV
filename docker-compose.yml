@@ -29,6 +29,13 @@ services:
     environment:
       DATABASE_URL: postgres://pesv_app:${APP_DB_PASSWORD:-pesv_app_dev}@db:5432/pesv
       CORS_ORIGINS: http://localhost:8080
+      WEB_URL: http://localhost:8080
+      SESSION_SECRET: ${SESSION_SECRET:-solo-para-desarrollo-cambia-este-secreto-0123456789}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-ZGVzYXJyb2xsby1zb2xhbWVudGUtMzItYnl0ZXMhISE=}
+      STORAGE_DRIVER: local
+      STORAGE_DIR: /data/storage
+    volumes:
+      - storage:/data/storage
     ports:
       - "3000:3000"
     depends_on:
@@ -43,3 +50,4 @@ services:
 
 volumes:
   pgdata:
+  storage:

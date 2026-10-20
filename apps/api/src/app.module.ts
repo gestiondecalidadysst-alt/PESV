@@ -1,19 +1,33 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from './auth/auth.module.js';
 import { CatalogController } from './catalog/catalog.controller.js';
 import { ClassificationController } from './classification/classification.controller.js';
 import { DatabaseModule } from './db/database.module.js';
+import { EventosModule } from './eventos/eventos.module.js';
+import { EvidenciasModule } from './evidencias/evidencias.module.js';
+import { FlotaModule } from './flota/flota.module.js';
 import { HealthController } from './health/health.controller.js';
-import { OrganizationsController } from './organizations/organizations.controller.js';
-import { OrganizationsService } from './organizations/organizations.service.js';
+import { IaModule } from './ia/ia.module.js';
+import { InspeccionesModule } from './inspecciones/inspecciones.module.js';
+import { MiembrosModule } from './miembros/miembros.module.js';
+import { OrganizationsModule } from './organizations/organizations.module.js';
+import { StorageModule } from './storage/storage.service.js';
+import { TableroModule } from './tablero/tablero.module.js';
 
 @Module({
-  imports: [DatabaseModule],
-  controllers: [
-    HealthController,
-    CatalogController,
-    ClassificationController,
-    OrganizationsController,
+  imports: [
+    DatabaseModule,
+    StorageModule,
+    EventosModule,
+    AuthModule,
+    OrganizationsModule,
+    MiembrosModule,
+    EvidenciasModule,
+    FlotaModule,
+    InspeccionesModule,
+    TableroModule,
+    IaModule,
   ],
-  providers: [OrganizationsService],
+  controllers: [HealthController, CatalogController, ClassificationController],
 })
 export class AppModule {}

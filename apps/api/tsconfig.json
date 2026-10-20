@@ -5,7 +5,7 @@
     "moduleResolution": "nodenext",
     "rootDir": "src",
     "outDir": "dist",
-    "types": ["node"],
+    "types": ["node", "multer"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "declaration": false,

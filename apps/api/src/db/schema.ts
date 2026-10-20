@@ -45,6 +45,7 @@ export const classifications = pgTable('classifications', {
   levelByDrivers: text('level_by_drivers'),
   reportsToSupertransporte: boolean('reports_to_supertransporte').notNull(),
   applicableSteps: smallint('applicable_steps').array().notNull(),
+  voluntary: boolean('voluntary').notNull().default(false),
   createdBy: uuid('created_by'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -559,4 +560,72 @@ export const vigiaReports = pgTable('vigia_reports', {
   generatedAt: timestamp('generated_at', { withTimezone: true }).notNull().defaultNow(),
   sentAt: timestamp('sent_at', { withTimezone: true }),
   sentBy: uuid('sent_by'),
+});
+
+// Fase 3 ---------------------------------------------------------------------
+
+export const audits = pgTable('audits', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  kind: text('kind').notNull(),
+  scope: text('scope').notNull(),
+  auditorName: text('auditor_name').notNull(),
+  auditorIndependent: boolean('auditor_independent').notNull().default(true),
+  includesIso: boolean('includes_iso').notNull().default(false),
+  plannedOn: date('planned_on').notNull(),
+  executedOn: date('executed_on'),
+  status: text('status').notNull().default('planeada'),
+  conclusions: text('conclusions'),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+});
+
+export const auditFindings = pgTable('audit_findings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  auditId: uuid('audit_id').notNull(),
+  kind: text('kind').notNull(),
+  stepNumber: smallint('step_number'),
+  isoClause: text('iso_clause'),
+  description: text('description').notNull(),
+  evidence: text('evidence'),
+  rootCause: text('root_cause'),
+  aiGenerated: boolean('ai_generated').notNull().default(false),
+  status: text('status').notNull().default('abierto'),
+  verification: text('verification'),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  closedBy: uuid('closed_by'),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+});
+
+export const plans = pgTable('plans', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  code: text('code').notNull(),
+  name: text('name').notNull(),
+  description: text('description'),
+  levels: text('levels').array().notNull().default([]),
+  maxVehicles: integer('max_vehicles'),
+  maxDrivers: integer('max_drivers'),
+  maxUsers: integer('max_users'),
+  features: text('features').array().notNull().default([]),
+  monthlyPrice: numeric('monthly_price', { mode: 'number' }),
+  currency: text('currency').notNull().default('COP'),
+  trialDays: integer('trial_days').notNull().default(0),
+  active: boolean('active').notNull().default(true),
+  isDefault: boolean('is_default').notNull().default(false),
+  createdAt: creado(),
+  updatedAt: actualizado(),
+});
+
+export const subscriptions = pgTable('subscriptions', {
+  organizationId: uuid('organization_id').primaryKey(),
+  planId: uuid('plan_id'),
+  status: text('status').notNull().default('prueba'),
+  trialEndsOn: date('trial_ends_on'),
+  periodEndsOn: date('period_ends_on'),
+  notes: text('notes'),
+  updatedBy: uuid('updated_by'),
+  updatedAt: actualizado(),
 });

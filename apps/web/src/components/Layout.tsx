@@ -1,6 +1,7 @@
 import type { Permiso } from '@pesv/shared';
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
+import { useConsulta } from '../lib/consultas';
 import { useSesion } from '../lib/sesion';
 import { Logo } from '../pages/Registro';
 
@@ -15,8 +16,10 @@ export interface Seccion {
   ruta: string;
   nombre: string;
   permiso: Permiso | null;
-  grupo: 'Gestión' | 'Operación' | 'Verificación' | 'Configuración';
+  grupo: 'Gestión' | 'Operación' | 'Verificación' | 'Configuración' | 'Plataforma';
   fin?: boolean;
+  /** Solo para administradores de la plataforma. */
+  soloPlataforma?: boolean;
 }
 
 /** Menú principal; cada entrada aparece solo si el rol tiene el permiso. */
@@ -32,17 +35,23 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/mantenimiento', nombre: 'Mantenimiento', permiso: 'ver', grupo: 'Operación' },
   { ruta: '/desplazamientos', nombre: 'Desplazamientos', permiso: 'ver', grupo: 'Operación' },
   { ruta: '/siniestros', nombre: 'Siniestros', permiso: 'ver', grupo: 'Operación' },
+  { ruta: '/riesgo', nombre: 'Puntaje de riesgo', permiso: 'ver', grupo: 'Operación' },
+  { ruta: '/auditorias', nombre: 'Auditorías', permiso: 'ver', grupo: 'Verificación' },
+  { ruta: '/iso39001', nombre: 'ISO 39001', permiso: 'ver', grupo: 'Verificación' },
   { ruta: '/vigia', nombre: 'Reporte VIGIA 2', permiso: 'ver', grupo: 'Verificación' },
   { ruta: '/configuracion/miembros', nombre: 'Miembros y roles', permiso: 'ver', grupo: 'Configuración' },
   { ruta: '/configuracion/ia', nombre: 'Proveedor de IA', permiso: 'configurar', grupo: 'Configuración' },
   { ruta: '/configuracion/integraciones', nombre: 'Integraciones n8n', permiso: 'configurar', grupo: 'Configuración' },
+  { ruta: '/configuracion/suscripcion', nombre: 'Suscripción', permiso: 'ver', grupo: 'Configuración' },
+  { ruta: '/plataforma', nombre: 'Panel de la plataforma', permiso: null, grupo: 'Plataforma', soloPlataforma: true },
 ];
 
 export function Layout() {
   const { yo, organizacion, elegirOrganizacion, puede, salir } = useSesion();
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const visibles = SECCIONES.filter((s) => s.permiso === null || puede(s.permiso));
+  const visibles = SECCIONES.filter((s) => (s.soloPlataforma ? yo?.usuario.esAdminPlataforma : s.permiso === null || puede(s.permiso)));
+  const suscripcion = useConsulta<{ soloLectura: boolean }>(['suscripcion'], '/org/suscripcion');
   const grupos = [...new Set(visibles.map((s) => s.grupo))];
 
   return (
@@ -123,6 +132,12 @@ export function Layout() {
         </div>
       </nav>
       <main id="contenido" className="min-w-0 flex-[999_1_35rem] px-5 py-7 sm:px-8 lg:px-10">
+        {suscripcion.data?.soloLectura && (
+          <div role="alert" className="mx-auto mb-6 max-w-6xl rounded-lg border border-[#f5c2c0] bg-[#fdecec] px-4 py-3 text-sm text-[#7a1c16]">
+            La cuenta está en <strong>solo lectura</strong> por un pago pendiente. Puedes consultar y descargar tu información; para registrar cambios
+            revisa tu <NavLink to="/configuracion/suscripcion" className="font-semibold underline">suscripción</NavLink>.
+          </div>
+        )}
         <Outlet />
       </main>
     </div>

@@ -6,7 +6,14 @@ const fecha = z
   .refine((v) => !Number.isNaN(Date.parse(v)), 'Fecha inválida');
 const fechaHora = z.string().datetime({ offset: true, message: 'Fecha y hora inválidas' });
 const texto = (min: number, max: number, mensaje: string) => z.string().trim().min(min, mensaje).max(max);
-const opcional = (max = 500) => z.string().trim().max(max).optional().or(z.literal('').transform(() => undefined));
+/** Texto opcional: vacío se guarda como ausente (null en la base), no como cadena vacía. */
+const opcional = (max = 500) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .optional()
+    .transform((v) => (v ? v : undefined));
 const uuid = z.string().uuid();
 const dinero = z.number().min(0).max(100_000_000_000);
 

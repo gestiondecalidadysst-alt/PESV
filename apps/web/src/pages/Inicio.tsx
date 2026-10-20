@@ -49,7 +49,7 @@ export function Inicio() {
           etiqueta="Cumplimiento PESV"
           valor={`${t.cumplimiento.porcentajeCumplimiento} %`}
           barra={t.cumplimiento.porcentajeCumplimiento}
-          detalle={`${t.cumplimiento.hechos} de ${t.cumplimiento.aplicables} pasos completos`}
+          detalle={`${t.cumplimiento.hechos} de ${t.cumplimiento.aplicables} pasos completos${t.iso ? ` · ISO 39001: ${t.iso.porcentaje} %` : ''}`}
         />
         <Cifra
           etiqueta="Preoperacionales de hoy"

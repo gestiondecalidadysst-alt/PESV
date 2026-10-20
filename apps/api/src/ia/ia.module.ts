@@ -21,6 +21,7 @@ import {
   Miembro,
   OrgActual,
   Permiso,
+  RequiereFuncion,
   UsuarioActual,
   type OrgSesion,
   type UsuarioSesion,
@@ -51,6 +52,7 @@ export class IaController {
 
   @Put('config')
   @Permiso('configurar')
+  @RequiereFuncion('ia')
   guardar(
     @Body(new ZodValidationPipe(iaConfigSchema)) body: IaConfigInput,
     @OrgActual() org: OrgSesion,
@@ -61,6 +63,7 @@ export class IaController {
 
   @Post('probar')
   @Permiso('configurar')
+  @RequiereFuncion('ia')
   probar(@OrgActual() org: OrgSesion, @UsuarioActual() u: UsuarioSesion) {
     return this.ia.probar(org.id, u.id);
   }

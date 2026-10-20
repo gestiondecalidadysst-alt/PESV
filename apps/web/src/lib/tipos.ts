@@ -109,6 +109,7 @@ export interface Alerta {
 
 export interface Tablero {
   cumplimiento: DetalleOrganizacion['resumen'];
+  iso?: { porcentaje: number; cubiertas: number; evaluables: number };
   nivel: Nivel | null;
   flota: { vehiculos: number; noAptos: number; conductoresActivos: number };
   preoperacionalesHoy: { esperados: number; realizados: number; fallasCriticas: number; fallasMenores: number };

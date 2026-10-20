@@ -7,6 +7,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  adopcionVoluntaria,
   clasificar,
   CORRESPONDENCIA_PESV_ISO,
   PASOS_PESV,
@@ -17,6 +18,7 @@ import {
 } from '@pesv/shared';
 import { and, count, desc, eq, inArray, ne, notInArray, sql } from 'drizzle-orm';
 import { auditar, esViolacionUnica } from '../common/audit.js';
+import { suscripcionInicial } from '../suscripciones/reglas.js';
 import { DatabaseService, type TenantTx } from '../db/database.service.js';
 import {
   classifications,
@@ -45,12 +47,13 @@ export class OrganizationsService {
    * 24 pasos y deja a quien la crea como administrador y líder PESV.
    */
   async crear(input: CrearOrganizacionInput, creador: Creador) {
-    const resultado = clasificar(input.clasificacion);
-    if (!resultado.obligada || !resultado.nivel) {
+    const base = clasificar(input.clasificacion);
+    if (!base.obligada && !input.adopcionVoluntaria) {
       throw new UnprocessableEntityException(
-        'Con esa flota y esos conductores la organización no está obligada a tener PESV.',
+        'Con esa flota y esos conductores la organización no está obligada a tener PESV. Puedes adoptarlo de forma voluntaria.',
       );
     }
+    const resultado = adopcionVoluntaria(base);
     const id = randomUUID();
     const usuarioId = 'usuarioId' in creador ? creador.usuarioId : randomUUID();
 
@@ -80,6 +83,7 @@ export class OrganizationsService {
           { organizationId: id, userId: usuarioId, role: 'lider_pesv' },
         ]);
         await this.guardarClasificacion(tx, id, input.clasificacion, resultado, usuarioId);
+        await suscripcionInicial(tx, id);
         await tx.insert(stepCompliance).values(
           PASOS_PESV.map((p) => ({
             organizationId: id,
@@ -96,7 +100,7 @@ export class OrganizationsService {
           accion: 'organizacion.creada',
           entidad: 'organization',
           entidadId: id,
-          datos: { nivel: resultado.nivel, pasosAplicables: resultado.pasosAplicables.length },
+          datos: { nivel: resultado.nivel, pasosAplicables: resultado.pasosAplicables.length, voluntaria: resultado.voluntaria ?? false },
         });
         return { organizacion: org!, resultado, usuarioId };
       });
@@ -130,6 +134,7 @@ export class OrganizationsService {
         levelByDrivers: resultado.nivelPorConductores,
         reportsToSupertransporte: resultado.reportaSupertransporte,
         applicableSteps: resultado.pasosAplicables,
+        voluntary: resultado.voluntaria ?? false,
         createdBy: usuarioId,
       })
       .returning();
@@ -282,7 +287,8 @@ export class OrganizationsService {
         vigente: { nivel: vigente.level, vehiculos: vigente.vehicles, conductores: vigente.drivers },
         registrados: { vehiculos: v, conductores: c },
         propuesta: resultado,
-        cambiaNivel: resultado.obligada && resultado.nivel !== vigente.level,
+        // Una organización voluntaria que llega a estar obligada se reclasifica aunque siga en básico.
+        cambiaNivel: resultado.obligada && (resultado.nivel !== vigente.level || vigente.voluntary),
         entrada,
       };
     });
@@ -293,7 +299,7 @@ export class OrganizationsService {
     const { propuesta, entrada, cambiaNivel } = await this.propuestaReclasificacion(id);
     if (!propuesta.obligada || !propuesta.nivel) {
       throw new UnprocessableEntityException(
-        'Con la flota y los conductores registrados la organización ya no estaría obligada; revisa los datos antes de reclasificar.',
+        'Con la flota y los conductores registrados la organización no estaría obligada; revisa los datos antes de reclasificar.',
       );
     }
     if (!cambiaNivel) throw new BadRequestException('El nivel no cambia con los datos registrados');

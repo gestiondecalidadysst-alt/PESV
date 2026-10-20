@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   BadRequestException,
   HttpException,
   HttpStatus,
@@ -20,6 +21,7 @@ import {
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import { auditar } from '../common/audit.js';
 import { decrypt, encrypt } from '../common/crypto.js';
+import { funcionDisponible, suscripcionDe } from '../suscripciones/reglas.js';
 import { DatabaseService } from '../db/database.service.js';
 import { aiMessages, aiSettings, aiUsage } from '../db/schema.js';
 import { EventosService } from '../eventos/eventos.service.js';
@@ -91,9 +93,15 @@ export class IaService {
   }
 
   /** Estado mínimo para cualquier miembro: qué agentes puede usar la interfaz (RN-11). */
+  /** La IA está disponible si el plan de la organización la incluye (o no tiene plan asignado). */
+  private planIncluyeIa(orgId: string) {
+    return this.database.withTenant(orgId, async (tx) => funcionDisponible((await suscripcionDe(tx, orgId)).plan, 'ia'));
+  }
+
   async estado(orgId: string) {
-    const f = await this.fila(orgId);
-    return { activa: !!f, agentes: f?.enabledAgents ?? [] };
+    const [f, incluida] = await Promise.all([this.fila(orgId), this.planIncluyeIa(orgId)]);
+    if (!incluida) return { activa: false, agentes: [], incluidaEnPlan: false };
+    return { activa: !!f, agentes: f?.enabledAgents ?? [], incluidaEnPlan: true };
   }
 
   async guardar(orgId: string, input: IaConfigInput, actorId: string) {
@@ -175,6 +183,7 @@ export class IaService {
     mensajes: MensajeIa[],
     opciones: { maxTokens?: number; imagen?: ImagenIa; economico?: boolean; ignorarAgente?: boolean } = {},
   ) {
+    if (!(await this.planIncluyeIa(orgId))) throw new ForbiddenException('Tu plan no incluye inteligencia artificial');
     const f = await this.fila(orgId);
     if (!f) throw new BadRequestException('La organización aún no configuró su proveedor de IA');
     if (!opciones.ignorarAgente && !f.enabledAgents.includes(agente)) {
@@ -415,6 +424,26 @@ No agregues decisiones, nombres ni fechas que no estén en el material. Devuelve
       { maxTokens: 3000 },
     );
     return r.texto;
+  }
+
+  /**
+   * Preauditoría (paso 22): revisa el estado del PESV y propone hallazgos. Son solo propuestas;
+   * la persona decide cuáles registrar en una auditoría (RN-10).
+   */
+  async auditarSimulado(orgId: string, usuarioId: string, material: string) {
+    const r = await this.llamar(
+      orgId,
+      usuarioId,
+      'auditor',
+      `${PRINCIPIOS}
+Eres auditor de sistemas de gestión de seguridad vial (Resolución 40595 de 2022 e ISO 39001). Haz una preauditoría con el material.
+Clasifica cada hallazgo como "no_conformidad_mayor" (incumple un requisito y compromete el sistema), "no_conformidad_menor" (incumplimiento puntual), "observacion" o "oportunidad_mejora".
+Cada hallazgo debe apoyarse en un dato concreto del material (cítalo en "evidencia"); no inventes hechos. Máximo 12 hallazgos, los más importantes primero.
+Responde solo con JSON: {"resumen": string, "hallazgos": [{"tipo": string, "pasoNumero": number | null, "clausulaIso": string | null, "descripcion": string, "evidencia": string}]}.`,
+      [{ rol: 'user', texto: material }],
+      { maxTokens: 3000 },
+    );
+    return this.parsearJson<{ resumen: string; hallazgos: unknown[] }>(r.texto);
   }
 
   async uso(orgId: string) {

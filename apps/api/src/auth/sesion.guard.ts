@@ -7,14 +7,16 @@ import {
   type ExecutionContext,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { tienePermiso, type Permiso } from '@pesv/shared';
+import { FUNCIONES_PLAN, tienePermiso, type FuncionPlan, type Permiso } from '@pesv/shared';
 import { createHash } from 'node:crypto';
 import { and, eq, sql } from 'drizzle-orm';
 import { DatabaseService } from '../db/database.service.js';
 import { memberships } from '../db/schema.js';
 import { AuthService } from './auth.service.js';
+import { esSoloLectura, funcionDisponible, SoloLecturaException, suscripcionDe } from '../suscripciones/reglas.js';
 import {
   ADMIN_PLATAFORMA,
+  FUNCION_PLAN,
   PERMISO,
   PUBLICO,
   type RequestConSesion,
@@ -27,6 +29,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * Guardia global:
  * 1. Exige sesión válida salvo en rutas @Publico().
  * 2. En rutas con @Permiso(), valida la organización activa, la membresía y el permiso del rol.
+ * 3. Aplica la suscripción: solo lectura con mora (RN-27) y funciones incluidas en el plan.
  */
 @Injectable()
 export class SesionGuard implements CanActivate {
@@ -63,20 +66,35 @@ export class SesionGuard implements CanActivate {
     if (!orgId || !UUID.test(orgId)) {
       throw new BadRequestException('Elige una organización (encabezado x-organization-id)');
     }
-    const roles = await this.database.withTenant(orgId, async (tx) =>
-      (
+    const { roles, suscripcion } = await this.database.withTenant(orgId, async (tx) => ({
+      roles: (
         await tx
           .select({ role: memberships.role })
           .from(memberships)
           .where(and(eq(memberships.organizationId, orgId), eq(memberships.userId, usuario.id)))
       ).map((r) => r.role),
-    );
+      suscripcion: await suscripcionDe(tx, orgId),
+    }));
     if (roles.length === 0) throw new ForbiddenException('No perteneces a esta organización');
     if (permiso !== '*' && !tienePermiso(roles, permiso)) {
       throw new ForbiddenException('Tu rol no tiene permiso para esta acción');
     }
+    this.aplicarSuscripcion(req, suscripcion, objetivos);
     req.org = { id: orgId, roles };
     return true;
+  }
+
+  private aplicarSuscripcion(
+    req: RequestConSesion,
+    { estado, plan }: Awaited<ReturnType<typeof suscripcionDe>>,
+    objetivos: Parameters<Reflector['getAllAndOverride']>[1],
+  ) {
+    if (esSoloLectura(estado) && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) throw new SoloLecturaException();
+    const funcion = this.reflector.getAllAndOverride<FuncionPlan | undefined>(FUNCION_PLAN, objetivos);
+    if (funcion && !funcionDisponible(plan, funcion)) {
+      const nombre = FUNCIONES_PLAN.find((f) => f.id === funcion)?.nombre ?? funcion;
+      throw new ForbiddenException(`Tu plan no incluye: ${nombre}`);
+    }
   }
 
   /** Acceso con token de API (n8n u otros sistemas): la organización la fija el token (RN-31). */
@@ -89,13 +107,18 @@ export class SesionGuard implements CanActivate {
     if (!fila) throw new UnauthorizedException('Token de API inválido o revocado');
     const permiso = this.reflector.getAllAndOverride<Permiso | '*' | undefined>(PERMISO, objetivos);
     const permitidos = new Set(fila.scopes.flatMap((s) => PERMISOS_POR_ALCANCE[s] ?? []));
-    if (!permiso || (permiso !== '*' && !permitidos.has(permiso))) {
+    // Las rutas para «cualquier miembro» exigen a un token al menos el permiso de lectura.
+    const requerido = permiso === '*' ? 'ver' : permiso;
+    if (!requerido || !permitidos.has(requerido)) {
       throw new ForbiddenException('El token no tiene permiso para esta acción');
     }
     const cabecera = req.header('x-organization-id')?.toLowerCase();
     if (cabecera && cabecera !== fila.organization_id) {
       throw new ForbiddenException('El token pertenece a otra organización');
     }
+    const suscripcion = await this.database.withTenant(fila.organization_id, (tx) => suscripcionDe(tx, fila.organization_id));
+    this.aplicarSuscripcion(req, suscripcion, objetivos);
+    if (!funcionDisponible(suscripcion.plan, 'n8n')) throw new ForbiddenException('Tu plan no incluye la integración por API');
     req.usuario = { id: fila.created_by ?? '', email: '', nombre: 'Token de API', esAdminPlataforma: false };
     req.org = { id: fila.organization_id, roles: [] };
     return true;
@@ -106,4 +129,5 @@ const PERMISOS_POR_ALCANCE: Record<string, Permiso[]> = {
   leer: ['ver'],
   crear_novedades: ['inspeccionar', 'gestionar_siniestros'],
   reportes: ['ver'],
+  telematica: ['telematica'],
 };

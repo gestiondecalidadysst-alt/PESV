@@ -17,7 +17,7 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
 import { z } from 'zod';
 import { CuadriculaPasos } from '../components/CuadriculaPasos';
-import { Aviso, Boton, Campo, Encabezado, Pagina, Selector } from '../components/ui';
+import { Aviso, Boton, Campo, Casilla, Encabezado, Pagina, Selector } from '../components/ui';
 import { api } from '../lib/api';
 import { guardarOrganizacionElegida, useSesion } from '../lib/sesion';
 
@@ -51,6 +51,7 @@ function FormularioOrganizacion({ modo }: { modo: 'registro' | 'nueva' }) {
   const vehiculos = useWatch({ control, name: 'organizacion.clasificacion.vehiculos' });
   const conductores = useWatch({ control, name: 'organizacion.clasificacion.conductores' });
   const modalidadId = useWatch({ control, name: 'organizacion.clasificacion.modalidadId' });
+  const voluntaria = useWatch({ control, name: 'organizacion.adopcionVoluntaria' });
   const modalidades = MODALIDADES.filter((m) => m.misionalidad === Number(misionalidad));
 
   useEffect(() => {
@@ -182,9 +183,16 @@ function FormularioOrganizacion({ modo }: { modo: 'registro' | 'nueva' }) {
           </div>
         </fieldset>
 
+        {resultado && !resultado.obligada && (
+          <Casilla
+            etiqueta="Quiero implementar el PESV de forma voluntaria"
+            descripcion="Se aplican los 18 pasos del nivel básico. No reportarás a Supertransporte mientras no estés obligada."
+            {...register('organizacion.adopcionVoluntaria')}
+          />
+        )}
         <Aviso error={enviar.error} />
         <div className="flex flex-wrap items-center gap-4">
-          <Boton type="submit" className="h-12 px-6 text-[15px]" cargando={enviar.isPending} disabled={resultado !== null && !resultado.obligada}>
+          <Boton type="submit" className="h-12 px-6 text-[15px]" cargando={enviar.isPending} disabled={resultado !== null && !resultado.obligada && !voluntaria}>
             {modo === 'registro' ? 'Crear cuenta' : 'Registrar organización'}
           </Boton>
           {modo === 'registro' && (
@@ -213,7 +221,8 @@ function ResultadoEnVivo({ resultado }: { resultado: ResultadoClasificacion | nu
         <div className="flex flex-col gap-2">
           <p className="text-2xl font-extrabold text-noche">No está obligada</p>
           <p className="text-[15px] leading-relaxed text-gris">
-            El PESV es obligatorio con más de {OBLIGACION.vehiculosMayorA} vehículos o con {OBLIGACION.conductoresDesde} o más conductores. Si la flota crece, vuelve a clasificarla.
+            El PESV es obligatorio con más de {OBLIGACION.vehiculosMayorA} vehículos o con {OBLIGACION.conductoresDesde} o más conductores. Aun así puedes
+            adoptarlo de forma voluntaria con los pasos del nivel básico; si la flota crece, la plataforma te propone reclasificar.
           </p>
         </div>
       )}

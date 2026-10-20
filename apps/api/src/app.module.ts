@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccionesModule } from './acciones/acciones.module.js';
+import { AuditoriasModule } from './auditorias/auditorias.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { ComiteModule } from './comite/comite.module.js';
 import { DesplazamientosModule } from './desplazamientos/desplazamientos.module.js';
@@ -21,6 +22,9 @@ import { MiembrosModule } from './miembros/miembros.module.js';
 import { OrganizationsModule } from './organizations/organizations.module.js';
 import { StorageModule } from './storage/storage.service.js';
 import { TableroModule } from './tablero/tablero.module.js';
+import { RiesgoModule } from './riesgo/riesgo.module.js';
+import { SuscripcionesModule } from './suscripciones/suscripciones.module.js';
+import { TelematicaModule } from './telematica/telematica.module.js';
 
 @Module({
   imports: [
@@ -43,6 +47,10 @@ import { TableroModule } from './tablero/tablero.module.js';
     DesplazamientosModule,
     VigiaModule,
     TareasModule,
+    AuditoriasModule,
+    RiesgoModule,
+    TelematicaModule,
+    SuscripcionesModule,
   ],
   controllers: [HealthController, CatalogController, ClassificationController],
 })

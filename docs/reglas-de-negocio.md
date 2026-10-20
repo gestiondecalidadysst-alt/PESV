@@ -8,7 +8,7 @@ regla ya está implementada.
 
 | Id | Regla | Estado |
 | --- | --- | --- |
-| RN-01 | La organización está obligada si tiene más de 10 vehículos o 2 o más conductores. Puede usar la app de forma voluntaria aunque no lo esté. **(norma)** | Implementada (adopción voluntaria pendiente) |
+| RN-01 | La organización está obligada si tiene más de 10 vehículos o 2 o más conductores. Puede usar la app de forma voluntaria aunque no lo esté. **(norma)** | Implementada (la adopción voluntaria aplica el nivel básico y no reporta a Supertransporte) |
 | RN-02 | El nivel es el más exigente entre el que resulta por vehículos y el que resulta por conductores, con los umbrales de cada misionalidad. **(norma)** | Implementada |
 | RN-03 | Pasos que aplican: básico 18, estándar 22 (suma 2, 13, 18 y 19), avanzado 24 (suma 11 y 21). **(norma)** | Implementada |
 | RN-04 | Si la flota o los conductores cruzan un umbral, la app propone reclasificar y el administrador confirma. Los pasos nuevos se abren como pendientes y nunca se borra evidencia. | Implementada |
@@ -19,7 +19,7 @@ regla ya está implementada.
 | Id | Regla | Estado |
 | --- | --- | --- |
 | RN-06 | Un paso queda "Hecho" solo cuando todos sus requisitos tienen evidencia aprobada por el líder PESV. | Implementada como "al menos una evidencia aprobada"; el detalle por requisito llega cuando se cargue el catálogo de requisitos |
-| RN-07 | El porcentaje de cumplimiento se calcula con una regla fija (pasos hechos entre pasos aplicables); nunca lo decide la IA. Igual para ISO 39001. | Implementada (PESV) |
+| RN-07 | El porcentaje de cumplimiento se calcula con una regla fija (pasos hechos entre pasos aplicables); nunca lo decide la IA. Igual para ISO 39001. | Implementada (ISO 39001 por cláusula, derivado de los pasos) |
 | RN-08 | Las evidencias tienen fecha y versión; no se borran, se reemplazan. La retención es configurable (paso 19). | Implementada (retención configurable pendiente) |
 | RN-09 | Una misma evidencia puede cubrir requisitos del PESV y de ISO 39001 a la vez. | Implementada |
 
@@ -58,13 +58,21 @@ regla ya está implementada.
 | RN-23 | Antes de generar un formulario se validan los campos obligatorios y se avisa lo que falta antes del plazo. | Implementada (evento `vigia.plazo` 7 días antes) |
 | RN-24 | Los soportes se entregan en PDF de máximo 15 MB y sin caracteres especiales en el nombre; la app los renombra y valida. **(norma)** | Implementada en evidencias |
 
+## Riesgo y mejora continua
+
+| Id | Regla | Estado |
+| --- | --- | --- |
+| RN-32 | El puntaje de riesgo de conductores y vehículos (0 a 100) se calcula con reglas fijas y explicables; la IA no lo decide. Un caso en banda crítica genera un aviso al mes mientras siga así. | Implementada |
+| RN-33 | Una no conformidad de auditoría se cierra solo con acciones correctivas cerradas y una verificación de eficacia. Los hallazgos propuestos por la IA se registran solo si una persona los elige. | Implementada |
+| RN-34 | Los viajes que llegan por telemática se identifican por su id externo y no se duplican. Se guardan aunque haya impedimentos (ya ocurrieron) y los impedimentos vuelven como advertencias. | Implementada |
+
 ## Cuentas, suscripción y datos
 
 | Id | Regla | Estado |
 | --- | --- | --- |
 | RN-25 | Cada organización tiene sus datos aislados. Un usuario puede pertenecer a varias organizaciones con roles distintos. | Implementada (RLS y membresías) |
-| RN-26 | El plan de suscripción va ligado al nivel. Planes, límites y precios son configurables desde un panel de administración. | Fase 3 |
-| RN-27 | Con mora en el pago, la cuenta pasa a solo lectura; nunca se bloquea el acceso a las evidencias. | Fase 3 |
+| RN-26 | El plan de suscripción va ligado al nivel. Planes, límites y precios son configurables desde un panel de administración. | Implementada (límites de vehículos, conductores y usuarios; funciones por plan) |
+| RN-27 | Con mora en el pago, la cuenta pasa a solo lectura; nunca se bloquea el acceso a las evidencias. | Implementada (402 en escrituras; consultas y descargas siguen disponibles) |
 | RN-28 | Todo cambio queda en un registro de auditoría que no se puede editar. | Implementada (solo inserción) |
 | RN-29 | Los datos personales de conductores se tratan bajo la Ley 1581 de 2012, con consentimiento al registrarlos. | Implementada |
 

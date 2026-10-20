@@ -16,7 +16,7 @@ import {
 } from '@nestjs/common';
 import { tokenApiSchema, webhookSchema, type TokenApiInput, type WebhookInput } from '@pesv/shared';
 import { desc, eq, isNull } from 'drizzle-orm';
-import { OrgActual, Permiso, UsuarioActual, type OrgSesion, type UsuarioSesion } from '../auth/decorators.js';
+import { OrgActual, Permiso, RequiereFuncion, UsuarioActual, type OrgSesion, type UsuarioSesion } from '../auth/decorators.js';
 import { auditar } from '../common/audit.js';
 import { encrypt, randomToken } from '../common/crypto.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
@@ -157,6 +157,7 @@ export class IntegracionesService {
 }
 
 @Controller('org/integraciones')
+@RequiereFuncion('n8n')
 export class IntegracionesController {
   constructor(private readonly service: IntegracionesService) {}
 

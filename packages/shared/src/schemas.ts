@@ -46,6 +46,8 @@ export const crearOrganizacionSchema = z.object({
   nit: nitSchema,
   radioAccion: z.enum(RADIOS_ACCION).optional(),
   clasificacion: entradaClasificacionSchema,
+  /** Si no está obligada, puede adoptar el PESV de forma voluntaria (nivel básico). */
+  adopcionVoluntaria: z.boolean().optional(),
 });
 
 export type CrearOrganizacionInput = z.infer<typeof crearOrganizacionSchema>;

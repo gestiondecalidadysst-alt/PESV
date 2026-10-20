@@ -11,3 +11,6 @@ export * from './vencimientos';
 export * from './catalog/eventos';
 export * from './catalog/vigia';
 export * from './schemas-fase2';
+export * from './riesgo';
+export * from './iso';
+export * from './schemas-fase3';

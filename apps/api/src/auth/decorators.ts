@@ -1,5 +1,5 @@
 import { createParamDecorator, SetMetadata, type ExecutionContext } from '@nestjs/common';
-import type { Permiso as TipoPermiso } from '@pesv/shared';
+import type { FuncionPlan, Permiso as TipoPermiso } from '@pesv/shared';
 import type { Request } from 'express';
 
 export const PUBLICO = 'pesv:publico';
@@ -17,6 +17,10 @@ export const Permiso = (permiso: TipoPermiso) => SetMetadata(PERMISO, permiso);
 
 /** La ruta trabaja sobre la organización activa y basta con ser miembro (cualquier rol). */
 export const Miembro = () => SetMetadata(PERMISO, '*');
+
+export const FUNCION_PLAN = 'pesv:funcion-plan';
+/** La ruta usa una función que puede no estar incluida en el plan de la organización. */
+export const RequiereFuncion = (funcion: FuncionPlan) => SetMetadata(FUNCION_PLAN, funcion);
 
 /** Solo para administradores de la plataforma (planes, límites, organizaciones). */
 export const AdminPlataforma = () => SetMetadata(ADMIN_PLATAFORMA, true);

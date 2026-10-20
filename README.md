@@ -4,9 +4,9 @@ Plataforma SaaS para gestionar el Plan Estratégico de Seguridad Vial (Resoluci�
 organizaciones colombianas de cualquier misionalidad y tamaño, con inteligencia artificial elegida por cada cliente
 e integración con n8n.
 
-> Estado: **Fase 2 completa**. Sobre el MVP (cuentas y roles, evidencias, flota, preoperacional sin conexión, IA
-> elegida por el cliente, n8n) se suman mantenimiento, siniestros con investigación, comité con acta en vivo y firmas,
-> planificación, desplazamientos y formularios de VIGIA 2. Ver [Hoja de ruta](#hoja-de-ruta).
+> Estado: **Fases 0 a 3 completas**. Gestión de los 24 pasos con evidencias, operación de flota, comité, siniestros,
+> planificación, VIGIA 2, auditorías con auditor simulado de IA, puntaje de riesgo, telemática GPS, ISO 39001 y
+> planes configurables desde un panel de la plataforma. Ver [Hoja de ruta](#hoja-de-ruta) para lo que sigue.
 
 ## Qué hace hoy
 
@@ -25,6 +25,16 @@ e integración con n8n.
 - **Planificación**: matriz de riesgos 5×5 con riesgo residual, metas, plan anual y capacitaciones con asistencia.
 - **Desplazamientos**: rutas con límite de velocidad y viajes que no se asignan con documentos vencidos.
 - **VIGIA 2**: calendario de plazos, indicadores de los formularios A–D, datos faltantes y archivo Excel para cargar.
+- **Auditorías** (pasos 22 y 23): hallazgos por paso y cláusula ISO, acciones correctivas y verificación de eficacia;
+  una no conformidad no se cierra con acciones abiertas. El **auditor simulado** de IA hace una preauditoría y la
+  persona elige qué hallazgos registrar.
+- **Puntaje de riesgo** de 0 a 100 por conductor y vehículo, con reglas fijas y cada punto explicado.
+- **Telemática GPS**: recepción de viajes por token de API (directo o vía n8n), sin duplicados, con exceso de
+  velocidad según la ruta y actualización del kilometraje.
+- **ISO 39001**: cumplimiento por cláusula derivado del estado de los pasos del PESV.
+- **Adopción voluntaria**: organizaciones no obligadas pueden implementar el nivel básico.
+- **Planes y suscripciones** configurables desde el panel de la plataforma: límites, funciones, precio y días de
+  prueba. Con mora la cuenta queda en solo lectura, sin perder acceso a la información.
 
 ## Estructura
 
@@ -71,6 +81,12 @@ pnpm db:seed                    # siembra el catálogo normativo
 pnpm dev                        # API en :3000 y web en :5173
 ```
 
+Para administrar planes y suscripciones, registra una cuenta y dale acceso a la plataforma:
+
+```bash
+pnpm --filter @pesv/api admin:plataforma tu-correo@empresa.co
+```
+
 ## Pruebas
 
 ```bash
@@ -107,22 +123,16 @@ membresía y el permiso del rol.
 | Planificación | `/org/riesgos`, `/org/metas`, `/org/plan`, `/org/capacitaciones`, `PUT /org/capacitaciones/:id/asistentes` |
 | Desplazamientos | `/org/rutas`, `GET/POST /org/viajes`, `POST /org/viajes/:id/terminar` |
 | VIGIA 2 | `GET /org/vigia/calendario`, `GET /org/vigia/:formulario/:periodo`, `POST …/generar`, `POST …/enviado`, `GET …/archivo` |
+| Auditorías | `GET/POST /org/auditorias`, `GET/PATCH /org/auditorias/:id`, `POST …/hallazgos`, `POST …/hallazgos/importar`, `POST …/cerrar`, `POST /org/auditorias/simulacro`, `POST /org/auditorias/hallazgos/:id/acciones`, `POST /org/auditorias/hallazgos/:id/cerrar` |
+| Riesgo | `GET /org/riesgo/conductores`, `GET /org/riesgo/vehiculos` |
+| ISO 39001 | `GET /org/tablero/iso` |
+| Telemática | `POST /telematica/viajes` (token con alcance `telematica`) |
+| Suscripción | `GET /org/suscripcion` |
+| Plataforma | `/plataforma/planes`, `GET /plataforma/organizaciones`, `PUT /plataforma/organizaciones/:id/suscripcion`, `/plataforma/administradores` (solo administradores de la plataforma) |
 
-### Fase 0 (referencia)
-
-| Método | Ruta | Qué hace |
-| --- | --- | --- |
-| GET | `/api/health` | Estado de la API y de la base de datos |
-| GET | `/api/catalog/pesv?nivel=estandar` | Los 24 pasos, reglas de nivel y cláusulas ISO relacionadas |
-| GET | `/api/catalog/iso39001` | Estructura de ISO 39001 y correspondencia con el PESV |
-| GET | `/api/catalog/modalidades` | Modalidades y radios de acción |
-| POST | `/api/classification/preview` | Calcula nivel y pasos aplicables sin guardar |
-| POST | `/api/organizations` | Registra la organización, su clasificación y el estado inicial de los pasos |
-| GET | `/api/organizations/:id` | Organización, clasificación vigente y resumen de cumplimiento |
-| GET | `/api/organizations/:id/steps` | Estado de los 24 pasos |
-
-Las rutas de una organización exigen el encabezado `x-organization-id`. **Es un mecanismo provisional de la
-Fase 0**: en la Fase 1 se reemplaza por autenticación OIDC y verificación de membresía.
+Las funciones de IA, n8n, telemática, ISO 39001 y auditor simulado se habilitan según el plan de la organización;
+sin plan asignado todas están disponibles. Con la suscripción en mora o cancelada solo se aceptan consultas (402 en
+cualquier escritura).
 
 ## Seguridad de los datos
 
@@ -131,15 +141,25 @@ Fase 0**: en la Fase 1 se reemplaza por autenticación OIDC y verificación de m
   organización.
 - El registro de auditoría solo admite inserciones, y las evidencias no se pueden borrar (se reemplazan por una
   nueva versión).
+- Las claves de IA y los secretos de webhooks se guardan cifrados (AES-256-GCM). Los tokens de API se guardan como
+  hash y solo tienen los permisos de sus alcances; un token nunca hereda permisos de «cualquier miembro».
 
 ## Hoja de ruta
 
-| Fase | Alcance |
-| --- | --- |
-| 0 · Cimientos | Monorepo, esquema multiempresa, catálogos PESV e ISO 39001, asistente de clasificación |
-| 1 · MVP | Autenticación y roles, evidencias por paso, flota y conductores, preoperacional móvil, tablero, copiloto de IA, proveedor de IA configurable por el cliente |
-| 2 · Operación | Mantenimiento, siniestros, comité con acta en vivo, plan anual, formularios de VIGIA 2, integración con n8n, OCR |
-| 3 · Escala | Auditor simulado, predicción de riesgo, telemática GPS, web services de VIGIA 2, planes y facturación configurables |
+| Fase | Alcance | Estado |
+| --- | --- | --- |
+| 0 · Cimientos | Monorepo, esquema multiempresa con RLS, catálogos PESV e ISO 39001, asistente de clasificación | Completa |
+| 1 · MVP | Autenticación y roles, evidencias por paso, flota y conductores, preoperacional sin conexión, tablero, copiloto e IA elegida por el cliente, n8n | Completa |
+| 2 · Operación | Mantenimiento, siniestros, comité con acta en vivo y firmas, planificación, desplazamientos, VIGIA 2 | Completa |
+| 3 · Escala | Auditorías y auditor simulado, puntaje de riesgo, telemática GPS, ISO 39001, adopción voluntaria, planes y suscripciones | Completa |
+
+Pendiente, fuera del alcance actual:
+
+- **Web services de VIGIA 2**: la carga directa requiere la autorización de Supertransporte y su especificación
+  técnica oficial. Mientras tanto la plataforma genera los archivos para cargarlos manualmente.
+- **Cobro en línea**: los planes y estados de suscripción se gestionan desde el panel; la pasarela de pagos se
+  conectará cuando se definan los precios.
+- **Requisitos completos de ISO 39001**: se cargan desde la copia licenciada de cada organización.
 
 ## Notas normativas
 

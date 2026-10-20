@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clasificar, nivelMasExigente, pasosParaNivel } from './classification';
+import { adopcionVoluntaria, clasificar, nivelMasExigente, pasosParaNivel } from './classification';
 import { entradaClasificacionSchema, crearOrganizacionSchema } from './schemas';
 
 describe('obligatoriedad', () => {
@@ -139,5 +139,21 @@ describe('utilidades y validación', () => {
     expect(crearOrganizacionSchema.safeParse({ ...base, nit: '900.123.456-7' }).success).toBe(
       false,
     );
+  });
+});
+
+describe('adopción voluntaria (RN-01)', () => {
+  it('una organización no obligada adopta el nivel básico y no reporta a Supertransporte', () => {
+    const r = adopcionVoluntaria(clasificar({ misionalidad: 2, vehiculos: 3, conductores: 1 }));
+    expect(r.obligada).toBe(false);
+    expect(r.voluntaria).toBe(true);
+    expect(r.nivel).toBe('basico');
+    expect(r.pasosAplicables).toHaveLength(18);
+    expect(r.reportaSupertransporte).toBe(false);
+  });
+
+  it('no cambia la clasificación de una organización obligada', () => {
+    const base = clasificar({ misionalidad: 2, vehiculos: 64, conductores: 30 });
+    expect(adopcionVoluntaria(base)).toBe(base);
   });
 });

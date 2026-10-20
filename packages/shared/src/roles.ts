@@ -23,6 +23,8 @@ export const PERMISOS = [
   'auditar',
   'gestionar_miembros',
   'configurar',
+  /** Enviar viajes desde la plataforma GPS; se da a tokens de API con alcance «telematica». */
+  'telematica',
 ] as const;
 export type Permiso = (typeof PERMISOS)[number];
 

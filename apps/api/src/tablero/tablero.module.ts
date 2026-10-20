@@ -1,6 +1,7 @@
 import { Controller, Get, Injectable, Module } from '@nestjs/common';
 import { and, count, eq, gte, lt } from 'drizzle-orm';
-import { OrgActual, Permiso, type OrgSesion } from '../auth/decorators.js';
+import { cumplimientoIso } from '@pesv/shared';
+import { OrgActual, Permiso, RequiereFuncion, type OrgSesion } from '../auth/decorators.js';
 import { DatabaseService } from '../db/database.service.js';
 import { evidences, inspections } from '../db/schema.js';
 import { FlotaModule, FlotaService } from '../flota/flota.module.js';
@@ -21,10 +22,15 @@ export class TableroService {
     private readonly flota: FlotaService,
   ) {}
 
+  async iso(orgId: string) {
+    const pasos = await this.organizaciones.pasos(orgId);
+    return cumplimientoIso(Object.fromEntries(pasos.map((p) => [p.numero, p.estado])));
+  }
+
   async resumen(orgId: string) {
     const desde = inicioDelDiaColombia();
     const hasta = new Date(desde.getTime() + 86_400_000);
-    const [detalle, vehiculos, conductores, alertas, conteos] = await Promise.all([
+    const [detalle, vehiculos, conductores, alertas, conteos, iso] = await Promise.all([
       this.organizaciones.obtener(orgId),
       this.flota.vehiculos(orgId),
       this.flota.conductores(orgId),
@@ -40,11 +46,13 @@ export class TableroService {
           .where(eq(evidences.status, 'borrador'));
         return { hoy, porRevisar };
       }),
+      this.iso(orgId),
     ]);
     const operables = vehiculos.filter((v) => v.estado !== 'inactivo' && v.motorizado);
     const inspeccionados = new Set(conteos.hoy.map((i) => i.vehiculo));
     return {
       cumplimiento: detalle.resumen,
+      iso: { porcentaje: iso.porcentaje, cubiertas: iso.cubiertas, evaluables: iso.evaluables },
       nivel: detalle.clasificacion?.level ?? null,
       flota: {
         vehiculos: vehiculos.filter((v) => v.estado !== 'inactivo').length,
@@ -72,6 +80,14 @@ export class TableroController {
   @Permiso('ver')
   resumen(@OrgActual() org: OrgSesion) {
     return this.service.resumen(org.id);
+  }
+
+  /** Cumplimiento de ISO 39001 por cláusula, derivado del estado de los pasos (RN-07). */
+  @Get('iso')
+  @Permiso('ver')
+  @RequiereFuncion('iso39001')
+  iso(@OrgActual() org: OrgSesion) {
+    return this.service.iso(org.id);
   }
 }
 

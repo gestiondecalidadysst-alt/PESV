@@ -31,6 +31,7 @@ import {
 } from '../auth/decorators.js';
 import { auditar, esViolacionUnica } from '../common/audit.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { verificarLimite } from '../suscripciones/reglas.js';
 import { DatabaseService } from '../db/database.service.js';
 import { drivers, vehicles } from '../db/schema.js';
 
@@ -127,6 +128,7 @@ export class FlotaService {
   async crearVehiculo(orgId: string, input: VehiculoInput, actorId: string) {
     try {
       return await this.database.withTenant(orgId, async (tx) => {
+        await verificarLimite(tx, orgId, 'vehiculos');
         const [v] = await tx.insert(vehicles).values({ organizationId: orgId, ...valoresVehiculo(input) }).returning();
         await auditar(tx, { organizacionId: orgId, actorId, accion: 'vehiculo.creado', entidad: 'vehicle', entidadId: v!.id });
         return aVehiculo(v!);
@@ -164,6 +166,7 @@ export class FlotaService {
   async crearConductor(orgId: string, input: ConductorInput, actorId: string) {
     try {
       return await this.database.withTenant(orgId, async (tx) => {
+        await verificarLimite(tx, orgId, 'conductores');
         const [c] = await tx
           .insert(drivers)
           .values({ organizationId: orgId, ...valoresConductor(input), dataConsentAt: new Date() })

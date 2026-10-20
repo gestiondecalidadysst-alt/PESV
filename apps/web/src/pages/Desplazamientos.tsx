@@ -29,7 +29,7 @@ interface Viaje {
   excesoVelocidad: boolean;
   excesoJornada: boolean;
   origen: 'manual' | 'telematica' | 'n8n';
-  estado: 'en_curso' | 'terminado';
+  estado: 'programado' | 'en_curso' | 'terminado' | 'cancelado';
   placa: string;
   conductor: string;
   ruta: string | null;

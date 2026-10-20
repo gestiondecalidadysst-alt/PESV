@@ -30,6 +30,8 @@ export interface ResultadoClasificacion {
   pasosAplicables: number[];
   pasosNoAplicables: number[];
   reportaSupertransporte: boolean;
+  /** La organización no está obligada pero decidió implementar el PESV (RN-01). */
+  voluntaria?: boolean;
 }
 
 export interface CatalogoClasificacion {
@@ -134,5 +136,23 @@ export function clasificar(
     pasosAplicables,
     pasosNoAplicables,
     reportaSupertransporte,
+  };
+}
+
+/**
+ * Adopción voluntaria (RN-01): una organización no obligada puede usar la plataforma. Se le
+ * aplican los pasos del nivel básico y no reporta a Supertransporte.
+ */
+export function adopcionVoluntaria(resultado: ResultadoClasificacion, pasos: readonly PasoPesv[] = PASOS_PESV): ResultadoClasificacion {
+  if (resultado.obligada) return resultado;
+  const pasosAplicables = pasosParaNivel('basico', pasos);
+  return {
+    ...resultado,
+    nivel: 'basico',
+    criterioDeterminante: null,
+    pasosAplicables,
+    pasosNoAplicables: pasos.map((p) => p.numero).filter((n) => !pasosAplicables.includes(n)),
+    reportaSupertransporte: false,
+    voluntaria: true,
   };
 }

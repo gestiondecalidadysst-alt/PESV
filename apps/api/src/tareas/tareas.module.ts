@@ -6,6 +6,7 @@ import { actions } from '../db/schema.js';
 import { EventosService } from '../eventos/eventos.service.js';
 import { FlotaModule, FlotaService } from '../flota/flota.module.js';
 import { MantenimientoModule, MantenimientoService } from '../mantenimiento/mantenimiento.module.js';
+import { RiesgoModule, RiesgoService } from '../riesgo/riesgo.module.js';
 import { TableroModule, TableroService } from '../tablero/tablero.module.js';
 import { VigiaModule, VigiaService } from '../vigia/vigia.module.js';
 
@@ -30,6 +31,7 @@ export class TareasService implements OnModuleInit, OnModuleDestroy {
     private readonly mantenimiento: MantenimientoService,
     private readonly vigia: VigiaService,
     private readonly tablero: TableroService,
+    private readonly riesgo: RiesgoService,
   ) {}
 
   onModuleInit() {
@@ -106,6 +108,16 @@ export class TareasService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
+    // Riesgo crítico: un aviso por conductor o vehículo al mes mientras siga en esa banda.
+    const mesActual = hoy.toISOString().slice(0, 7);
+    const [conductores, vehiculos] = await Promise.all([this.riesgo.conductores(orgId), this.riesgo.vehiculos(orgId)]);
+    for (const c of conductores.filter((x) => x.banda === 'critico')) {
+      await emitir('riesgo.critico', { tipo: 'conductor', nombre: c.nombre, puntaje: c.puntaje, factores: c.factores }, `riesgo:conductor:${c.id}:${mesActual}`);
+    }
+    for (const v of vehiculos.filter((x) => x.banda === 'critico')) {
+      await emitir('riesgo.critico', { tipo: 'vehiculo', placa: v.placa, puntaje: v.puntaje, factores: v.factores }, `riesgo:vehiculo:${v.id}:${mesActual}`);
+    }
+
     if (hoy.getDate() <= 3) {
       const mes = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1).toISOString().slice(0, 7);
       const t = await this.tablero.resumen(orgId);
@@ -120,7 +132,7 @@ export class TareasService implements OnModuleInit, OnModuleDestroy {
 }
 
 @Module({
-  imports: [FlotaModule, MantenimientoModule, VigiaModule, TableroModule],
+  imports: [FlotaModule, MantenimientoModule, VigiaModule, TableroModule, RiesgoModule],
   providers: [TareasService],
   exports: [TareasService],
 })

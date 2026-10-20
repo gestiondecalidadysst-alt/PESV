@@ -32,6 +32,12 @@ const Planificacion = cargar(() => import('./pages/Planificacion'), 'Planificaci
 const Desplazamientos = cargar(() => import('./pages/Desplazamientos'), 'Desplazamientos');
 const Acciones = cargar(() => import('./pages/Acciones'), 'Acciones');
 const Vigia = cargar(() => import('./pages/Vigia'), 'Vigia');
+const Auditorias = cargar(() => import('./pages/Auditorias'), 'Auditorias');
+const AuditoriaDetalle = cargar(() => import('./pages/Auditorias'), 'AuditoriaDetalle');
+const Riesgo = cargar(() => import('./pages/Riesgo'), 'Riesgo');
+const Iso = cargar(() => import('./pages/Riesgo'), 'Iso');
+const Suscripcion = cargar(() => import('./pages/Plataforma'), 'Suscripcion');
+const Plataforma = cargar(() => import('./pages/Plataforma'), 'Plataforma');
 
 const conCarga = (pagina: ReactNode) => <Suspense fallback={<Cargando />}>{pagina}</Suspense>;
 
@@ -87,6 +93,12 @@ const router = createBrowserRouter([
           { path: 'planificacion', element: conCarga(<Planificacion />) },
           { path: 'acciones', element: conCarga(<Acciones />) },
           { path: 'vigia', element: conCarga(<Vigia />) },
+          { path: 'auditorias', element: conCarga(<Auditorias />) },
+          { path: 'auditorias/:id', element: conCarga(<AuditoriaDetalle />) },
+          { path: 'riesgo', element: conCarga(<Riesgo />) },
+          { path: 'iso39001', element: conCarga(<Iso />) },
+          { path: 'configuracion/suscripcion', element: conCarga(<Suscripcion />) },
+          { path: 'plataforma', element: conCarga(<Plataforma />) },
           { path: 'configuracion/ia', element: conCarga(<ConfigIa />) },
           { path: 'configuracion/integraciones', element: conCarga(<Integraciones />) },
           { path: 'configuracion/miembros', element: conCarga(<Miembros />) },

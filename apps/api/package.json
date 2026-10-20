@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "db:migrate": "node scripts/migrate.mjs",
-    "db:seed": "node scripts/seed.mjs"
+    "db:seed": "node scripts/seed.mjs",
+    "admin:plataforma": "node scripts/admin-plataforma.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1153.0",

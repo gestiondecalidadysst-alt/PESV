@@ -11,6 +11,8 @@ export const EVENTOS = [
   { id: 'accion.por_vencer', nombre: 'Acción correctiva por vencer', descripcion: 'Compromisos del comité y acciones de auditoría.' },
   { id: 'comite.reunion', nombre: 'Reunión del comité', descripcion: 'Convocatoria con la agenda sugerida.' },
   { id: 'informe.listo', nombre: 'Informe mensual listo', descripcion: 'Indicadores del mes cerrado.' },
+  { id: 'auditoria.hallazgo', nombre: 'Hallazgo de auditoría', descripcion: 'No conformidad u observación registrada en una auditoría (pasos 22 y 23).' },
+  { id: 'riesgo.critico', nombre: 'Riesgo crítico', descripcion: 'Un conductor o vehículo entró en la banda de riesgo crítico.' },
   { id: 'ia.presupuesto', nombre: 'Consumo de IA alto', descripcion: 'El consumo del mes llegó al umbral configurado.' },
   { id: 'prueba', nombre: 'Evento de prueba', descripcion: 'Enviado manualmente para probar la integración.' },
 ] as const;
@@ -23,6 +25,7 @@ export const ALCANCES_TOKEN = [
   { id: 'leer', nombre: 'Leer indicadores, alertas y registros' },
   { id: 'crear_novedades', nombre: 'Crear preoperacionales y siniestros' },
   { id: 'reportes', nombre: 'Descargar reportes' },
+  { id: 'telematica', nombre: 'Enviar viajes desde la plataforma GPS' },
 ] as const;
 export type AlcanceToken = (typeof ALCANCES_TOKEN)[number]['id'];
 export const IDS_ALCANCE_TOKEN = ALCANCES_TOKEN.map((a) => a.id) as [AlcanceToken, ...AlcanceToken[]];

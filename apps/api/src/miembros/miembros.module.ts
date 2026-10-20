@@ -23,6 +23,7 @@ import {
 import { auditar } from '../common/audit.js';
 import { hashPassword } from '../common/crypto.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { verificarLimite } from '../suscripciones/reglas.js';
 import { DatabaseService } from '../db/database.service.js';
 import { memberships, users } from '../db/schema.js';
 import { randomUUID } from 'node:crypto';
@@ -61,6 +62,10 @@ export class MiembrosService {
     }
     return this.database.withTenant(orgId, async (tx) => {
       const creado = !usuarioId;
+      const yaEsMiembro =
+        !creado &&
+        (await tx.select({ id: memberships.userId }).from(memberships).where(and(eq(memberships.organizationId, orgId), eq(memberships.userId, usuarioId!)))).length > 0;
+      if (!yaEsMiembro) await verificarLimite(tx, orgId, 'usuarios');
       if (!usuarioId) {
         usuarioId = randomUUID();
         await tx.insert(users).values({ id: usuarioId, email: input.email, fullName: input.nombre, passwordHash });

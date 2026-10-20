@@ -77,6 +77,7 @@ export function Integraciones() {
       </Tarjeta>
 
       <Tokens />
+      <AyudaTelematica />
 
       <Tarjeta>
         <Subtitulo>Bitácora de envíos</Subtitulo>
@@ -173,6 +174,43 @@ function Tokens() {
           ))}
         </ul>
       )}
+    </Tarjeta>
+  );
+}
+
+const EJEMPLO_TELEMATICA = `POST /api/telematica/viajes
+Authorization: Bearer pesv_…   (token con alcance «Enviar viajes desde la plataforma GPS»)
+
+{
+  "viajes": [{
+    "idExterno": "viaje-48213",
+    "placa": "ABC123",
+    "documentoConductor": "1067000111",
+    "salida": "2026-10-20T06:10:00-05:00",
+    "llegada": "2026-10-20T09:45:00-05:00",
+    "distanciaKm": 182.4,
+    "velocidadMaxima": 94,
+    "excesoJornada": false,
+    "ruta": "Planta - Puerto",
+    "odometroKm": 120540
+  }]
+}`;
+
+/** Cómo conectar una plataforma GPS (directo o con un flujo de n8n). */
+function AyudaTelematica() {
+  return (
+    <Tarjeta>
+      <Subtitulo>Telemática GPS</Subtitulo>
+      <p className="text-sm">
+        Envía los viajes desde tu plataforma GPS, directamente o con un flujo de n8n, con un token que tenga el alcance de telemática. Cada viaje se
+        identifica por su <code>idExterno</code>: reenviar un lote no duplica registros. El exceso de velocidad se calcula con el límite de la ruta y
+        el kilometraje del vehículo se actualiza si es mayor que el registrado.
+      </p>
+      <pre className="overflow-x-auto rounded-lg bg-noche p-4 text-[12px] leading-relaxed text-[#e6ebf2]">{EJEMPLO_TELEMATICA}</pre>
+      <p className="text-[13px] text-gris">
+        La respuesta indica cuántos viajes se registraron, cuáles eran duplicados, cuáles se rechazaron (placa o cédula desconocidas) y las
+        advertencias de documentos vencidos o vehículos no aptos.
+      </p>
     </Tarjeta>
   );
 }

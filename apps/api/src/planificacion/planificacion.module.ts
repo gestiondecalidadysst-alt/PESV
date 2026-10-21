@@ -4,40 +4,19 @@ import {
   asistentesCapacitacionSchema,
   capacitacionSchema,
   metaSchema,
-  nivelRiesgo,
-  riesgoSchema,
   type ActividadPlanInput,
   type AsistentesCapacitacionInput,
   type CapacitacionInput,
   type MetaInput,
-  type RiesgoInput,
 } from '@pesv/shared';
 import { asc, desc, eq } from 'drizzle-orm';
 import { OrgActual, Permiso, UsuarioActual, type OrgSesion, type UsuarioSesion } from '../auth/decorators.js';
 import { auditar } from '../common/audit.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { DatabaseService } from '../db/database.service.js';
-import { goals, planActivities, roadRisks, trainingAttendance, trainings } from '../db/schema.js';
+import { goals, planActivities, trainingAttendance, trainings } from '../db/schema.js';
 
-type FilaRiesgo = typeof roadRisks.$inferSelect;
 type FilaMeta = typeof goals.$inferSelect;
-
-const aRiesgo = (r: FilaRiesgo) => ({
-  id: r.id,
-  actorVial: r.roadActor,
-  peligro: r.hazard,
-  descripcion: r.description,
-  probabilidad: r.probability,
-  severidad: r.severity,
-  inherente: nivelRiesgo(r.probability, r.severity),
-  controles: r.controls,
-  probabilidadResidual: r.residualProbability,
-  severidadResidual: r.residualSeverity,
-  residual: r.residualProbability && r.residualSeverity ? nivelRiesgo(r.residualProbability, r.residualSeverity) : null,
-  responsable: r.ownerName,
-  estado: r.status,
-  identificadoEl: r.identifiedOn,
-});
 
 /** Una meta se cumple si el valor actual está del lado correcto de la meta. */
 export const metaCumplida = (m: FilaMeta) =>
@@ -57,35 +36,6 @@ const aMeta = (m: FilaMeta) => ({
 @Injectable()
 export class PlanificacionService {
   constructor(private readonly database: DatabaseService) {}
-
-  riesgos(orgId: string) {
-    return this.database.withTenant(orgId, async (tx) =>
-      (await tx.select().from(roadRisks).orderBy(desc(roadRisks.createdAt))).map(aRiesgo).sort((a, b) => b.inherente.valor - a.inherente.valor),
-    );
-  }
-
-  guardarRiesgo(orgId: string, input: RiesgoInput, actorId: string, id?: string) {
-    return this.database.withTenant(orgId, async (tx) => {
-      const valores = {
-        roadActor: input.actorVial,
-        hazard: input.peligro,
-        description: input.descripcion,
-        probability: input.probabilidad,
-        severity: input.severidad,
-        controls: input.controles ?? null,
-        residualProbability: input.probabilidadResidual ?? null,
-        residualSeverity: input.severidadResidual ?? null,
-        ownerName: input.responsable ?? null,
-        status: input.estado,
-      };
-      const [r] = id
-        ? await tx.update(roadRisks).set(valores).where(eq(roadRisks.id, id)).returning()
-        : await tx.insert(roadRisks).values({ organizationId: orgId, ...valores }).returning();
-      if (!r) throw new NotFoundException('Riesgo no encontrado');
-      await auditar(tx, { organizacionId: orgId, actorId, accion: id ? 'riesgo.actualizado' : 'riesgo.identificado', entidad: 'road_risk', entidadId: r.id });
-      return aRiesgo(r);
-    });
-  }
 
   metas(orgId: string, anio?: number) {
     return this.database.withTenant(orgId, async (tx) =>
@@ -125,6 +75,8 @@ export class PlanificacionService {
         estado: a.status,
         ejecutadaEl: a.executedOn,
         presupuesto: a.budget,
+        origen: a.source,
+        origenId: a.sourceId,
         atrasada: a.status !== 'ejecutada' && a.status !== 'cancelada' && a.plannedEnd < new Date().toISOString().slice(0, 10),
       })),
     );
@@ -217,15 +169,6 @@ export class PlanificacionService {
 @Controller('org')
 export class PlanificacionController {
   constructor(private readonly s: PlanificacionService) {}
-
-  @Get('riesgos') @Permiso('ver')
-  riesgos(@OrgActual() o: OrgSesion) { return this.s.riesgos(o.id); }
-
-  @Post('riesgos') @Permiso('gestionar_pesv')
-  crearRiesgo(@Body(new ZodValidationPipe(riesgoSchema)) b: RiesgoInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.guardarRiesgo(o.id, b, u.id); }
-
-  @Patch('riesgos/:id') @Permiso('gestionar_pesv')
-  editarRiesgo(@Param('id', ParseUUIDPipe) id: string, @Body(new ZodValidationPipe(riesgoSchema)) b: RiesgoInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.guardarRiesgo(o.id, b, u.id, id); }
 
   @Get('metas') @Permiso('ver')
   metas(@OrgActual() o: OrgSesion, @Query('anio') anio?: string) { return this.s.metas(o.id, anio ? Number(anio) : undefined); }

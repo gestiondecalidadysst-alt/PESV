@@ -1,5 +1,15 @@
 import { z } from 'zod';
 import { IDS_TIPO_DOCUMENTO } from './catalog/documentos';
+import {
+  IDS_ACTOR_VIAL,
+  IDS_FACTOR_RIESGO_VIAL,
+  IDS_JERARQUIA_CONTROL,
+  IDS_METODOLOGIA_RIESGO,
+  IDS_TIPO_DESPLAZAMIENTO,
+  NIVELES_CONSECUENCIA,
+  NIVELES_DEFICIENCIA,
+  NIVELES_EXPOSICION,
+} from './catalog/matriz-riesgos';
 
 const fecha = z
   .string()
@@ -44,3 +54,74 @@ export const formatoDocumentoSchema = z.object({
   aprobo: z.object(firmante),
 });
 export type FormatoDocumentoInput = z.infer<typeof formatoDocumentoSchema>;
+
+// Matriz de riesgos viales (paso 6) ------------------------------------------------
+
+const texto = (min: number, max: number, mensaje: string) => z.string().trim().min(min, mensaje).max(max);
+const valorDe = (lista: readonly { valor: number }[], mensaje: string) =>
+  z
+    .number()
+    .int()
+    .refine((v) => lista.some((x) => x.valor === v), mensaje)
+    .nullable()
+    .optional();
+const escala5 = z.number().int().min(1).max(5).nullable().optional();
+
+const evaluacion = z.object({
+  deficiencia: valorDe(NIVELES_DEFICIENCIA, 'Nivel de deficiencia no válido'),
+  exposicion: valorDe(NIVELES_EXPOSICION, 'Nivel de exposición no válido'),
+  consecuencia: valorDe(NIVELES_CONSECUENCIA, 'Nivel de consecuencia no válido'),
+  probabilidad: escala5,
+  severidad: escala5,
+});
+export type EvaluacionInput = z.infer<typeof evaluacion>;
+
+const completa = (metodologia: string, e: EvaluacionInput | undefined | null) =>
+  !!e && (metodologia === 'gtc45' ? e.deficiencia != null && e.exposicion != null && e.consecuencia != null : e.probabilidad != null && e.severidad != null);
+const vacia = (e: EvaluacionInput | undefined | null) => !e || Object.values(e).every((v) => v == null);
+
+export const riesgoViaSchema = z
+  .object({
+    metodologia: z.enum(IDS_METODOLOGIA_RIESGO),
+    proceso: texto(2, 150, 'Indica el proceso'),
+    actividad: opcional(200),
+    cargo: opcional(150),
+    rutinaria: z.boolean().default(true),
+    tipoDesplazamiento: z.enum(IDS_TIPO_DESPLAZAMIENTO).default('en_mision'),
+    actorVial: z.enum(IDS_ACTOR_VIAL),
+    factor: z.enum(IDS_FACTOR_RIESGO_VIAL),
+    peligro: texto(3, 300, 'Describe el peligro'),
+    descripcion: opcional(2000),
+    efectos: opcional(1000),
+    expuestos: z.number().int().min(0).max(1_000_000).nullable().optional(),
+    controlFuente: opcional(1000),
+    controlMedio: opcional(1000),
+    controlIndividuo: opcional(1000),
+    inherente: evaluacion,
+    residual: evaluacion.nullable().optional(),
+    peorConsecuencia: opcional(500),
+    requisitoLegal: z.boolean().default(false),
+    referenciaLegal: opcional(500),
+    responsable: opcional(150),
+    estado: z.enum(['abierto', 'controlado', 'cerrado']).default('abierto'),
+  })
+  .refine((r) => completa(r.metodologia, r.inherente), {
+    message: 'Completa la evaluación del riesgo con la metodología elegida',
+    path: ['inherente'],
+  })
+  .refine((r) => vacia(r.residual) || completa(r.metodologia, r.residual), {
+    message: 'Completa la evaluación residual o déjala vacía',
+    path: ['residual'],
+  });
+export type RiesgoViaInput = z.infer<typeof riesgoViaSchema>;
+
+export const metodologiaSchema = z.object({ metodologia: z.enum(IDS_METODOLOGIA_RIESGO) });
+
+export const medidaSchema = z.object({
+  jerarquia: z.enum(IDS_JERARQUIA_CONTROL),
+  descripcion: texto(3, 1000, 'Describe la medida'),
+  responsable: opcional(150),
+  fechaLimite: fecha.optional().nullable(),
+  estado: z.enum(['pendiente', 'en_curso', 'implementada']).default('pendiente'),
+});
+export type MedidaInput = z.infer<typeof medidaSchema>;

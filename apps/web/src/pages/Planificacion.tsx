@@ -3,175 +3,45 @@ import {
   actividadPlanSchema,
   capacitacionSchema,
   metaSchema,
-  nivelRiesgo,
-  riesgoSchema,
   type ActividadPlanInput,
-  type BandaRiesgo,
   type CapacitacionInput,
   type MetaInput,
-  type RiesgoInput,
 } from '@pesv/shared';
 import { useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import { Link } from 'react-router';
 import type { z } from 'zod';
-import { AreaTexto, Aviso, Boton, Campo, Cargando, Casilla, Encabezado, Insignia, Pagina, Pestanas, Selector, Subtitulo, Tabla, Tarjeta, Vacio, fecha, td, th } from '../components/ui';
+import { Aviso, Boton, Campo, Cargando, Casilla, Encabezado, Insignia, Pagina, Pestanas, Selector, Subtitulo, Tabla, Tarjeta, Vacio, fecha, td, th } from '../components/ui';
 import { api } from '../lib/api';
 import { useAccion, useConsulta } from '../lib/consultas';
 import { useSesion } from '../lib/sesion';
 import type { Conductor } from '../lib/tipos';
 
-type Pestana = 'riesgos' | 'metas' | 'plan' | 'capacitaciones';
+type Pestana = 'metas' | 'plan' | 'capacitaciones';
 const numero = (v: string) => (v === '' ? null : Number(v));
 const entero = (v: string) => (v === '' ? undefined : Number(v));
 
 export function Planificacion() {
-  const [pestana, setPestana] = useState<Pestana>('riesgos');
+  const [pestana, setPestana] = useState<Pestana>('metas');
   return (
     <Pagina>
       <Encabezado
         titulo="Planificación"
-        descripcion="Matriz de riesgos viales (paso 8), objetivos y metas (pasos 5 y 9), plan anual de trabajo (paso 10) y programa de capacitación (paso 11)."
+        descripcion={<>Objetivos y metas (paso 7), plan anual de trabajo (paso 9) y plan anual de formación (paso 10). La matriz de riesgos (paso 6) está en <Link to="/matriz-riesgos" className="font-semibold text-[#1d4e89] underline">Matriz de riesgos</Link>.</>}
       />
       <Pestanas
         valor={pestana}
         alCambiar={setPestana}
         opciones={[
-          { id: 'riesgos', nombre: 'Riesgos' },
           { id: 'metas', nombre: 'Objetivos y metas' },
           { id: 'plan', nombre: 'Plan anual' },
           { id: 'capacitaciones', nombre: 'Capacitaciones' },
         ]}
       />
-      {pestana === 'riesgos' && <Riesgos />}
       {pestana === 'metas' && <Metas />}
       {pestana === 'plan' && <PlanAnual />}
       {pestana === 'capacitaciones' && <Capacitaciones />}
     </Pagina>
-  );
-}
-
-// Riesgos ---------------------------------------------------------------------
-
-interface Riesgo {
-  id: string;
-  actorVial: RiesgoInput['actorVial'];
-  peligro: string;
-  descripcion: string;
-  probabilidad: number;
-  severidad: number;
-  inherente: { valor: number; banda: BandaRiesgo };
-  controles: string | null;
-  probabilidadResidual: number | null;
-  severidadResidual: number | null;
-  residual: { valor: number; banda: BandaRiesgo } | null;
-  responsable: string | null;
-  estado: RiesgoInput['estado'];
-}
-const ACTOR: Record<RiesgoInput['actorVial'], string> = { conductor: 'Conductor', motociclista: 'Motociclista', ciclista: 'Ciclista', peaton: 'Peatón', pasajero: 'Pasajero', todos: 'Todos los actores' };
-const TONO_BANDA = { bajo: 'exito', moderado: 'info', alto: 'aviso', extremo: 'peligro' } as const;
-const TEXTO_BANDA = { bajo: 'Bajo', moderado: 'Moderado', alto: 'Alto', extremo: 'Extremo' } as const;
-const ESCALA = [1, 2, 3, 4, 5];
-
-function Banda({ n }: { n: { valor: number; banda: BandaRiesgo } | null }) {
-  if (!n) return <span className="text-gris">—</span>;
-  return <Insignia tono={TONO_BANDA[n.banda]}>{TEXTO_BANDA[n.banda]} · {n.valor}</Insignia>;
-}
-
-function Riesgos() {
-  const { puede } = useSesion();
-  const riesgos = useConsulta<Riesgo[]>(['riesgos'], '/org/riesgos');
-  const [editando, setEditando] = useState<Riesgo | 'nuevo' | null>(null);
-  return (
-    <>
-      {puede('gestionar_pesv') && !editando && <Boton className="self-start" onClick={() => setEditando('nuevo')}>Identificar riesgo</Boton>}
-      {editando && <FormularioRiesgo key={editando === 'nuevo' ? 'nuevo' : editando.id} riesgo={editando === 'nuevo' ? undefined : editando} alTerminar={() => setEditando(null)} />}
-      {riesgos.isPending ? <Cargando /> : riesgos.data?.length ? (
-        <Tabla minimo="56rem">
-          <thead>
-            <tr>
-              <th className={th}>Peligro</th>
-              <th className={th}>Actor vial</th>
-              <th className={th}>Inherente</th>
-              <th className={th}>Controles</th>
-              <th className={th}>Residual</th>
-              <th className={th}>Estado</th>
-              <th className={th}><span className="sr-only">Acciones</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            {riesgos.data.map((r) => (
-              <tr key={r.id}>
-                <td className={td}><strong className="text-noche">{r.peligro}</strong><span className="block text-[13px] text-gris">{r.descripcion}</span></td>
-                <td className={td}>{ACTOR[r.actorVial]}</td>
-                <td className={td}><Banda n={r.inherente} /></td>
-                <td className={td}>{r.controles ?? <span className="text-gris">Sin controles</span>}</td>
-                <td className={td}><Banda n={r.residual} /></td>
-                <td className={td}>{r.estado}</td>
-                <td className={td}>{puede('gestionar_pesv') && <Boton variante="texto" onClick={() => setEditando(r)}>Editar</Boton>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </Tabla>
-      ) : (
-        <Vacio titulo="Sin riesgos identificados">Identifica los riesgos de cada actor vial con probabilidad y severidad de 1 a 5.</Vacio>
-      )}
-      <Aviso error={riesgos.error} />
-    </>
-  );
-}
-
-function FormularioRiesgo({ riesgo, alTerminar }: { riesgo?: Riesgo; alTerminar: () => void }) {
-  const { register, handleSubmit, control, formState: { errors } } = useForm<z.input<typeof riesgoSchema>, unknown, RiesgoInput>({
-    resolver: zodResolver(riesgoSchema),
-    defaultValues: riesgo
-      ? { ...riesgo, controles: riesgo.controles ?? '', responsable: riesgo.responsable ?? '' }
-      : { actorVial: 'conductor', probabilidad: 3, severidad: 3, estado: 'abierto' },
-  });
-  const [p, s, pr, sr] = useWatch({ control, name: ['probabilidad', 'severidad', 'probabilidadResidual', 'severidadResidual'] });
-  const guardar = useAccion((d: RiesgoInput) => (riesgo ? api.patch(`/org/riesgos/${riesgo.id}`, d) : api.post('/org/riesgos', d)), { alTerminar });
-  const escala = (id: string, etiqueta: string, campo: 'probabilidad' | 'severidad' | 'probabilidadResidual' | 'severidadResidual', opcional = false) => (
-    <Selector id={id} etiqueta={etiqueta} {...register(campo, { setValueAs: opcional ? (v) => (v === '' ? null : Number(v)) : Number })}>
-      {opcional && <option value="">Sin evaluar</option>}
-      {ESCALA.map((n) => <option key={n} value={n}>{n}</option>)}
-    </Selector>
-  );
-  return (
-    <Tarjeta>
-      <Subtitulo>{riesgo ? 'Editar riesgo' : 'Nuevo riesgo vial'}</Subtitulo>
-      <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit((d) => guardar.mutate(d))}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Selector id="rg-actor" etiqueta="Actor vial" {...register('actorVial')}>
-            {Object.entries(ACTOR).map(([v, t]) => <option key={v} value={v}>{t}</option>)}
-          </Selector>
-          <Campo id="rg-peligro" etiqueta="Peligro" placeholder="Ej.: fatiga en recorridos largos" error={errors.peligro?.message} {...register('peligro')} />
-        </div>
-        <AreaTexto id="rg-desc" etiqueta="Descripción del riesgo" error={errors.descripcion?.message} {...register('descripcion')} />
-        <div className="grid gap-4 sm:grid-cols-3">
-          {escala('rg-p', 'Probabilidad (1–5)', 'probabilidad')}
-          {escala('rg-s', 'Severidad (1–5)', 'severidad')}
-          <div className="flex flex-col justify-end pb-2"><Banda n={nivelRiesgo(Number(p), Number(s))} /></div>
-        </div>
-        <AreaTexto id="rg-ctrl" etiqueta="Controles" ayuda="Jerarquía: eliminar, sustituir, controles de ingeniería, administrativos, elementos de protección." {...register('controles')} />
-        <div className="grid gap-4 sm:grid-cols-3">
-          {escala('rg-pr', 'Probabilidad residual', 'probabilidadResidual', true)}
-          {escala('rg-sr', 'Severidad residual', 'severidadResidual', true)}
-          <div className="flex flex-col justify-end pb-2"><Banda n={pr && sr ? nivelRiesgo(Number(pr), Number(sr)) : null} /></div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Campo id="rg-resp" etiqueta="Responsable" {...register('responsable')} />
-          <Selector id="rg-estado" etiqueta="Estado" {...register('estado')}>
-            <option value="abierto">Abierto</option>
-            <option value="controlado">Controlado</option>
-            <option value="cerrado">Cerrado</option>
-          </Selector>
-        </div>
-        <Aviso error={guardar.error} />
-        <div className="flex gap-2">
-          <Boton type="submit" cargando={guardar.isPending}>Guardar riesgo</Boton>
-          <Boton variante="secundario" onClick={alTerminar}>Cancelar</Boton>
-        </div>
-      </form>
-    </Tarjeta>
   );
 }
 

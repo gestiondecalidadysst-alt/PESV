@@ -156,8 +156,12 @@ describe.skipIf(!hayBaseDeDatos)('Fase 2', () => {
 
   describe('planificación', () => {
     it('valora riesgos, metas, plan anual y capacitaciones', async () => {
-      const r = await c.agente.post('/api/org/riesgos').set(h()).send({ actorVial: 'conductor', peligro: 'Fatiga', descripcion: 'Jornadas nocturnas largas', probabilidad: 4, severidad: 4 }).expect(201);
-      expect(r.body.inherente).toEqual({ valor: 16, banda: 'extremo' });
+      const r = await c.agente
+        .post('/api/org/matriz/riesgos')
+        .set(h())
+        .send({ metodologia: 'matriz5x5', proceso: 'Distribución', actorVial: 'conductor', factor: 'humano', peligro: 'Fatiga', descripcion: 'Jornadas nocturnas largas', inherente: { probabilidad: 4, severidad: 4 } })
+        .expect(201);
+      expect(r.body.inherente).toMatchObject({ valor: 16, nivel: 'Extremo', critico: true });
       await c.agente.post('/api/org/metas').set(h()).send({ anio: ahora.getFullYear(), objetivo: 'Cero fallecidos', indicador: 'Fallecidos en siniestros', meta: 0, valorActual: 0 }).expect(201);
       await c.agente.post('/api/org/plan').set(h()).send({ anio: ahora.getFullYear(), titulo: 'Simulacro de emergencia vial', pasoNumero: 12, responsable: 'Líder PESV', inicio: hoyMas(-10), fin: hoyMas(-1), estado: 'ejecutada' }).expect(201);
       const cap = await c.agente.post('/api/org/capacitaciones').set(h()).send({ titulo: 'Manejo defensivo', tema: 'Distancia de seguimiento', programadaEl: hoyMas(0), estado: 'ejecutada', horas: 2 }).expect(201);

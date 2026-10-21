@@ -66,6 +66,18 @@ regla ya está implementada.
 | RN-33 | Una no conformidad de auditoría se cierra solo con acciones correctivas cerradas y una verificación de eficacia. Los hallazgos propuestos por la IA se registran solo si una persona los elige. | Implementada |
 | RN-34 | Los viajes que llegan por telemática se identifican por su id externo y no se duplican. Se guardan aunque haya impedimentos (ya ocurrieron) y los impedimentos vuelven como advertencias. | Implementada |
 
+## Documentos y matriz de riesgos (versión 2)
+
+| Id | Regla | Estado |
+| --- | --- | --- |
+| RN-40 | Todo documento que genera la plataforma (PDF o Excel) lleva el formato del sistema de gestión de la organización: logo, razón social y NIT, título, código, versión y fecha en el encabezado; elaboró, revisó y aprobó, pie de página y "Página X de Y" en el pie. Cada tipo de documento puede tener su propio código, versión y firmantes. | Implementada |
+| RN-41 | El logo solo se acepta en PNG o JPG reales (se verifica el contenido, no la extensión) y de máximo 1 MB. | Implementada |
+| RN-42 | Cada organización elige la metodología de su matriz de riesgos: GTC 45 adaptada (NR = ND × NE × NC, niveles I a IV) o matriz 5×5 (probabilidad × severidad). Los criterios son datos del catálogo, no código. | Implementada |
+| RN-43 | Un riesgo guarda la metodología con la que se evaluó. Si la organización cambia de metodología, los riesgos anteriores conservan su evaluación hasta que se reevalúen, y se ordenan por su prioridad equivalente. | Implementada |
+| RN-44 | Son riesgos críticos los de nivel I y II (GTC 45) o alto y extremo (5×5); exigen medidas de intervención y alimentan los programas del paso 8 y el indicador de riesgos altos de VIGIA. | Implementada |
+| RN-45 | Las medidas de intervención se clasifican por la jerarquía de controles (eliminación, sustitución, ingeniería, administrativos, EPP). Una medida enviada al plan de trabajo crea una sola actividad (paso 8) y el avance de la medida actualiza el estado de esa actividad. | Implementada |
+| RN-46 | La matriz se puede guardar como evidencia del paso 6 en PDF; queda en borrador hasta que el líder PESV la apruebe. | Implementada |
+
 ## Cuentas, suscripción y datos
 
 | Id | Regla | Estado |

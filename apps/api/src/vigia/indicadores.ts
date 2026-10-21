@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto';
 import {
   NIVEL_SINIESTRO_LABEL,
-  nivelRiesgo,
+  
   nivelSiniestro,
   type FormularioVigia,
   type Periodo,
 } from '@pesv/shared';
 import { and, eq, gte, lte, ne, sql } from 'drizzle-orm';
 import type { TenantTx } from '../db/database.service.js';
+import { evaluacionInherente } from '../matriz/evaluacion.js';
 import {
   actions,
   crashes,
@@ -112,7 +113,8 @@ async function administrativo(tx: TenantTx, p: Periodo): Promise<ResultadoFormul
   const riesgos = await tx.select().from(roadRisks);
   const alInicio = riesgos.filter((r) => r.identifiedOn < `${anio}-01-01`).length;
   const alCierre = riesgos.filter((r) => r.identifiedOn <= p.hasta).length;
-  const altos = riesgos.filter((r) => r.identifiedOn <= p.hasta && ['alto', 'extremo'].includes(nivelRiesgo(r.probability, r.severity).banda)).length;
+  // Riesgos críticos: nivel I o II en GTC 45; alto o extremo en 5×5.
+  const altos = riesgos.filter((r) => r.identifiedOn <= p.hasta && evaluacionInherente(r)?.critico).length;
   const metas = await tx.select().from(goals).where(eq(goals.year, anio));
   const cumplidas = metas.filter((m) => m.currentValue !== null && (m.direction === 'menor_o_igual' ? m.currentValue <= m.target : m.currentValue >= m.target)).length;
   const actividades = await tx.select().from(planActivities).where(and(gte(planActivities.plannedEnd, p.desde), lte(planActivities.plannedEnd, p.hasta), ne(planActivities.status, 'cancelada')));

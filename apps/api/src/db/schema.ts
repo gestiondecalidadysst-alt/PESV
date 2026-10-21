@@ -33,6 +33,7 @@ export const organizations = pgTable('organizations', {
   logoKey: text('logo_key'),
   logoMime: text('logo_mime'),
   logoUpdatedAt: timestamp('logo_updated_at', { withTimezone: true }),
+  riskMethodology: text('risk_methodology').notNull().default('gtc45'),
 });
 
 export const classifications = pgTable('classifications', {
@@ -454,18 +455,40 @@ export const meetingDecisions = pgTable('meeting_decisions', {
 export const roadRisks = pgTable('road_risks', {
   id: uuid('id').primaryKey().defaultRandom(),
   organizationId: org(),
+  methodology: text('methodology').notNull().default('matriz5x5'),
+  process: text('process'),
+  activity: text('activity'),
+  jobRole: text('job_role'),
+  routine: boolean('routine').notNull().default(true),
+  tripType: text('trip_type').notNull().default('en_mision'),
   roadActor: text('road_actor').notNull(),
+  riskFactor: text('risk_factor'),
   hazard: text('hazard').notNull(),
-  description: text('description').notNull(),
-  probability: smallint('probability').notNull(),
-  severity: smallint('severity').notNull(),
+  description: text('description'),
+  effects: text('effects'),
+  exposedCount: integer('exposed_count'),
+  controlSource: text('control_source'),
+  controlMedium: text('control_medium'),
+  controlIndividual: text('control_individual'),
   controls: text('controls'),
+  probability: smallint('probability'),
+  severity: smallint('severity'),
+  deficiency: smallint('deficiency'),
+  exposure: smallint('exposure'),
+  consequence: smallint('consequence'),
   residualProbability: smallint('residual_probability'),
   residualSeverity: smallint('residual_severity'),
+  residualDeficiency: smallint('residual_deficiency'),
+  residualExposure: smallint('residual_exposure'),
+  residualConsequence: smallint('residual_consequence'),
+  worstConsequence: text('worst_consequence'),
+  legalRequirement: boolean('legal_requirement').notNull().default(false),
+  legalReference: text('legal_reference'),
   ownerName: text('owner_name'),
   status: text('status').notNull().default('abierto'),
   identifiedOn: date('identified_on').notNull().$defaultFn(() => new Date().toISOString().slice(0, 10)),
   createdAt: creado(),
+  updatedAt: actualizado(),
 });
 
 export const goals = pgTable('goals', {
@@ -494,6 +517,8 @@ export const planActivities = pgTable('plan_activities', {
   executedOn: date('executed_on'),
   budget: numeric('budget', { mode: 'number' }),
   createdAt: creado(),
+  source: text('source').notNull().default('manual'),
+  sourceId: uuid('source_id'),
 });
 
 export const trainings = pgTable('trainings', {
@@ -739,3 +764,18 @@ export const documentFormats = pgTable(
   },
   (t) => [primaryKey({ columns: [t.organizationId, t.docType] })],
 );
+
+export const riskMeasures = pgTable('risk_measures', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  riskId: uuid('risk_id').notNull(),
+  hierarchy: text('hierarchy').notNull(),
+  description: text('description').notNull(),
+  responsibleName: text('responsible_name'),
+  dueOn: date('due_on'),
+  status: text('status').notNull().default('pendiente'),
+  planActivityId: uuid('plan_activity_id'),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+  updatedAt: actualizado(),
+});

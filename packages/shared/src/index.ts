@@ -18,3 +18,4 @@ export * from './schemas-cuentas';
 export * from './catalog/documentos';
 export * from './catalog/conexiones-pasos';
 export * from './schemas-v2';
+export * from './catalog/matriz-riesgos';

@@ -97,13 +97,3 @@ export const NIVEL_SINIESTRO_LABEL = {
   solo_danos: 'Solo daños (choque simple)',
 } as const;
 
-/**
- * Matriz de riesgos 5 × 5: nivel = probabilidad × severidad. Las bandas son una elección de
- * producto habitual en la gestión de riesgos; cada organización puede ajustarlas.
- */
-export function nivelRiesgo(probabilidad: number, severidad: number) {
-  const valor = probabilidad * severidad;
-  const banda = valor >= 16 ? 'extremo' : valor >= 10 ? 'alto' : valor >= 5 ? 'moderado' : 'bajo';
-  return { valor, banda } as const;
-}
-export type BandaRiesgo = ReturnType<typeof nivelRiesgo>['banda'];

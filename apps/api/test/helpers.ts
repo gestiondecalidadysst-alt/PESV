@@ -1,4 +1,8 @@
 import 'reflect-metadata';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { Test } from '@nestjs/testing';
@@ -95,3 +99,24 @@ export async function servidorDePrueba(): Promise<ServidorDePrueba> {
     cerrar: () => new Promise((r) => server.close(() => r())),
   };
 }
+
+/** PNG de 1×1 píxel. */
+export const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+
+/** Texto de un PDF (con pdftotext si está instalado; si no, null y se omite la comprobación). */
+export function textoPdf(datos: Buffer): string | null {
+  try {
+    const dir = mkdtempSync(path.join(tmpdir(), 'pesv-pdf-'));
+    const archivo = path.join(dir, 'doc.pdf');
+    writeFileSync(archivo, datos);
+    return execFileSync('pdftotext', ['-layout', archivo, '-'], { encoding: 'utf8' });
+  } catch {
+    return null;
+  }
+}
+
+export const binario = (res: { on: (e: string, f: (c?: Buffer) => void) => void; setEncoding: (e: string) => void }, cb: (err: Error | null, body: Buffer) => void) => {
+  const partes: Buffer[] = [];
+  res.on('data', (c?: Buffer) => partes.push(c!));
+  res.on('end', () => cb(null, Buffer.concat(partes)));
+};

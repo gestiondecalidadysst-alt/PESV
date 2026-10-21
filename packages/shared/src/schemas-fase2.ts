@@ -138,20 +138,6 @@ export const firmaActaSchema = z.object({ password: z.string().min(1, 'Confirma 
 
 // Planificación -------------------------------------------------------------
 
-export const riesgoSchema = z.object({
-  actorVial: z.enum(['conductor', 'motociclista', 'ciclista', 'peaton', 'pasajero', 'todos']),
-  peligro: texto(3, 300, 'Describe el peligro'),
-  descripcion: texto(3, 2000, 'Describe el riesgo'),
-  probabilidad: z.number().int().min(1).max(5),
-  severidad: z.number().int().min(1).max(5),
-  controles: opcional(2000),
-  probabilidadResidual: z.number().int().min(1).max(5).optional().nullable(),
-  severidadResidual: z.number().int().min(1).max(5).optional().nullable(),
-  responsable: opcional(150),
-  estado: z.enum(['abierto', 'controlado', 'cerrado']).default('abierto'),
-});
-export type RiesgoInput = z.infer<typeof riesgoSchema>;
-
 export const metaSchema = z.object({
   anio: z.number().int().min(2020).max(2100),
   objetivo: texto(3, 500, 'Escribe el objetivo'),

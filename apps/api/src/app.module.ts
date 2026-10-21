@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { ComiteModule } from './comite/comite.module.js';
 import { DesplazamientosModule } from './desplazamientos/desplazamientos.module.js';
 import { MantenimientoModule } from './mantenimiento/mantenimiento.module.js';
-import { PlanificacionModule } from './planificacion/planificacion.module.js';
+import { IndicadoresModule } from './indicadores/indicadores.module.js';
 import { MatrizModule } from './matriz/matriz.module.js';
 import { PlanTrabajoModule } from './plan-trabajo/plan-trabajo.module.js';
 import { CapacitacionModule } from './capacitacion/capacitacion.module.js';
@@ -52,7 +52,7 @@ import { TelematicaModule } from './telematica/telematica.module.js';
     AccionesModule,
     SiniestrosModule,
     ComiteModule,
-    PlanificacionModule,
+    IndicadoresModule,
     MatrizModule,
     PlanTrabajoModule,
     CapacitacionModule,

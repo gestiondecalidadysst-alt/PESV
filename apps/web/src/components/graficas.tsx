@@ -221,6 +221,7 @@ export function GraficaLinea({
   formato = formatoPorDefecto,
   ancho = 640,
   desdeCero = true,
+  enteros = false,
 }: {
   titulo: string;
   descripcion?: ReactNode;
@@ -230,6 +231,8 @@ export function GraficaLinea({
   formato?: Formato;
   ancho?: number;
   desdeCero?: boolean;
+  /** Conteos: el eje solo muestra números enteros. */
+  enteros?: boolean;
 }) {
   const [activa, setActiva] = useState<number | null>(null);
   const svg = useRef<SVGSVGElement>(null);
@@ -237,7 +240,7 @@ export function GraficaLinea({
   const todos = [...conColor.flatMap((s) => s.valores), ...(meta?.valores ?? [])].filter((v): v is number => v != null);
   const max = todos.length ? Math.max(...todos) : 1;
   const min = todos.length ? (desdeCero ? Math.min(0, ...todos) : Math.min(...todos)) : 0;
-  const ticks = marcas(max === min ? max + 1 : max, min);
+  const ticks = marcas(max === min ? max + 1 : max, min, 4, enteros);
   const piso = ticks[0]!;
   const tope = ticks[ticks.length - 1]!;
   const interior = { ancho: ancho - M.izquierda - M.derecha, alto: ALTO - M.arriba - M.abajo };

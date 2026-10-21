@@ -37,7 +37,7 @@ interface Actividad {
   descripcion: string | null;
   pasoNumero: number | null;
   metaId: string | null;
-  meta: { objetivo: string; indicador: string } | null;
+  meta: { objetivo: string; indicador: string | null } | null;
   fase: FasePhva;
   responsable: string;
   recursos: string | null;
@@ -57,7 +57,7 @@ interface Actividad {
 interface Plan {
   anio: number;
   corte: number;
-  metas: { id: string; objetivo: string; indicador: string }[];
+  metas: { id: string; objetivo: string; indicador: string | null }[];
   actividades: Actividad[];
   resumen: {
     programados: number;
@@ -464,9 +464,9 @@ function FormularioActividad({ actividad, anio, metas, alTerminar }: { actividad
           <Selector id="ac-fase" etiqueta="Fase PHVA" {...register('fase')}>
             {FASES_PHVA.map((f) => <option key={f.id} value={f.id}>{f.nombre}</option>)}
           </Selector>
-          <Selector id="ac-meta" etiqueta="Objetivo / meta (paso 7)" ayuda={metas.length ? undefined : <>No hay metas para {anio}. <Link to="/planificacion" className="underline">Crearlas</Link></>} {...register('metaId', { setValueAs: (v) => v || null })}>
+          <Selector id="ac-meta" etiqueta="Objetivo / meta (paso 7)" ayuda={metas.length ? undefined : <>No hay metas para {anio}. <Link to="/indicadores?vista=metas" className="underline">Crearlas</Link></>} {...register('metaId', { setValueAs: (v) => v || null })}>
             <option value="">Sin meta asociada</option>
-            {metas.map((m) => <option key={m.id} value={m.id}>{m.objetivo} — {m.indicador}</option>)}
+            {metas.map((m) => <option key={m.id} value={m.id}>{[m.objetivo, m.indicador].filter(Boolean).join(' — ')}</option>)}
           </Selector>
         </div>
         <Controller

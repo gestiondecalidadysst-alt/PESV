@@ -136,18 +136,6 @@ export type DecisionInput = z.infer<typeof decisionSchema>;
 
 export const firmaActaSchema = z.object({ password: z.string().min(1, 'Confirma con tu contraseña') });
 
-// Planificación -------------------------------------------------------------
-
-export const metaSchema = z.object({
-  anio: z.number().int().min(2020).max(2100),
-  objetivo: texto(3, 500, 'Escribe el objetivo'),
-  indicador: texto(3, 300, 'Escribe el indicador'),
-  meta: z.number(),
-  valorActual: z.number().optional().nullable(),
-  sentido: z.enum(['menor_o_igual', 'mayor_o_igual']).default('menor_o_igual'),
-});
-export type MetaInput = z.infer<typeof metaSchema>;
-
 // Desplazamientos -----------------------------------------------------------
 
 export const rutaSchema = z.object({

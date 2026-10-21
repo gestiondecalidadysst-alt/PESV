@@ -21,3 +21,4 @@ export * from './schemas-v2';
 export * from './catalog/matriz-riesgos';
 export * from './catalog/plan-trabajo';
 export * from './catalog/formacion';
+export * from './catalog/indicadores';

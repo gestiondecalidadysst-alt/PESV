@@ -86,6 +86,10 @@ regla ya está implementada.
 | RN-53 | Una capacitación se marca como ejecutada solo con al menos un asistente registrado, una fecha no futura del mismo año y su duración. Ya ejecutada no se puede cancelar ni eliminar. | Implementada |
 | RN-54 | Indicadores del plan de formación: cumplimiento = ejecutadas ÷ programadas con fecha vencida; cobertura = conductores activos formados en el año ÷ conductores activos; eficacia = asistentes que alcanzan la nota mínima ÷ asistentes evaluados; además, asistencia y horas-persona. | Implementada |
 | RN-55 | La eficacia de una capacitación ejecutada se verifica después (observación, inspecciones, telemetría o siniestralidad), con fecha no anterior a la capacitación. Si no fue eficaz, se sugiere una acción de mejora. | Implementada |
+| RN-56 | Cada indicador tiene ficha técnica: objetivo, tipo (resultado, gestión o actividad), fórmula, unidad, frecuencia, meta con su sentido, umbral de alerta, fuente, responsable y paso del PESV. La plataforma propone 12 indicadores que se miden solos con sus datos; los demás se registran a mano. | Implementada |
+| RN-57 | Un resultado cumple si alcanza la meta según su sentido, queda en riesgo entre la meta y el umbral de alerta, y no cumple más allá. Un periodo en curso se mide hasta hoy y se marca como parcial; el último resultado del indicador es el del último periodo cerrado. | Implementada |
+| RN-58 | Al registrar el análisis de un periodo, el valor calculado queda fijo aunque después cambien los datos. Un periodo cerrado que no cumple queda "por analizar" hasta que tenga análisis o una acción de mejora, que se registra en el plan de acción con responsable y fecha. | Implementada |
+| RN-59 | Una meta del PESV (paso 7) puede conectarse a un indicador: su resultado es el acumulado del año si el indicador es automático, o la suma (números) o el último valor (porcentajes y tasas) si es manual. | Implementada |
 
 ## Cuentas, suscripción y datos
 

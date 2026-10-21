@@ -11,6 +11,7 @@ import {
   NIVELES_EXPOSICION,
 } from './catalog/matriz-riesgos';
 import { IDS_FASE_PHVA } from './catalog/plan-trabajo';
+import { CALCULOS_INDICADOR, IDS_FRECUENCIA, IDS_TIPO_INDICADOR, IDS_UNIDAD_INDICADOR } from './catalog/indicadores';
 import { IDS_FACILITADOR, IDS_METODO_EVALUACION, IDS_MODALIDAD_FORMACION, IDS_PUBLICO_FORMACION, IDS_TEMA_FORMACION, IDS_TIPO_FORMACION } from './catalog/formacion';
 
 const fecha = z
@@ -216,3 +217,61 @@ export const eficaciaSchema = z.object({
   nota: texto(5, 2000, 'Describe cómo se verificó la eficacia'),
 });
 export type EficaciaInput = z.infer<typeof eficaciaSchema>;
+
+// Indicadores (paso 20) y metas (paso 7) ----------------------------------------------
+
+const sentido = z.enum(['mayor_o_igual', 'menor_o_igual']);
+
+export const indicadorSchema = z
+  .object({
+    nombre: texto(3, 200, 'Escribe el nombre del indicador'),
+    objetivo: opcional(1000),
+    tipo: z.enum(IDS_TIPO_INDICADOR),
+    formula: texto(3, 1000, 'Describe la fórmula'),
+    unidad: z.enum(IDS_UNIDAD_INDICADOR),
+    frecuencia: z.enum(IDS_FRECUENCIA),
+    sentido,
+    meta: z.number().min(-1_000_000_000).max(1_000_000_000),
+    alerta: z.number().min(-1_000_000_000).max(1_000_000_000).nullable().optional(),
+    fuente: opcional(500),
+    responsable: opcional(150),
+    pasoNumero: z.number().int().min(1).max(24).nullable().optional(),
+    activo: z.boolean().default(true),
+  })
+  .refine((i) => i.alerta == null || (i.sentido === 'mayor_o_igual' ? i.alerta < i.meta : i.alerta > i.meta), {
+    message: 'El umbral de alerta debe quedar del lado de incumplimiento de la meta',
+    path: ['alerta'],
+  });
+export type IndicadorInput = z.infer<typeof indicadorSchema>;
+
+export const plantillasIndicadorSchema = z.object({
+  calculos: z.array(z.enum(CALCULOS_INDICADOR)).min(1, 'Elige al menos un indicador'),
+});
+
+export const resultadoIndicadorSchema = z.object({
+  /** Para indicadores manuales. En los automáticos se toma el valor calculado. */
+  valor: z.number().min(-1_000_000_000).max(1_000_000_000).nullable().optional(),
+  numerador: z.number().min(0).nullable().optional(),
+  denominador: z.number().min(0).nullable().optional(),
+  analisis: opcional(3000),
+});
+export type ResultadoIndicadorInput = z.infer<typeof resultadoIndicadorSchema>;
+
+export const accionIndicadorSchema = z.object({
+  descripcion: texto(5, 1000, 'Describe la acción'),
+  responsable: texto(3, 150, 'Indica el responsable'),
+  fechaLimite: fecha,
+  tipo: z.enum(['correctiva', 'preventiva', 'mejora']).default('correctiva'),
+});
+export type AccionIndicadorInput = z.infer<typeof accionIndicadorSchema>;
+
+export const metaPesvSchema = z.object({
+  anio: z.number().int().min(2020).max(2100),
+  objetivo: texto(3, 500, 'Escribe el objetivo'),
+  indicadorId: z.string().uuid().nullable().optional(),
+  indicador: opcional(300),
+  meta: z.number(),
+  valorActual: z.number().nullable().optional(),
+  sentido: sentido.default('menor_o_igual'),
+}).refine((m) => !!m.indicadorId || !!m.indicador, { message: 'Elige un indicador o escribe cómo se mide', path: ['indicador'] });
+export type MetaPesvInput = z.infer<typeof metaPesvSchema>;

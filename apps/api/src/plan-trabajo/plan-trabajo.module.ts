@@ -66,7 +66,7 @@ const CELDA = {
   noEjecutado: { fondo: '#FDE2C3', color: '#8A4A00' },
 } as const;
 
-function aActividad(a: FilaActividad, seguimiento: FilaSeguimiento[], metas: Map<string, { objetivo: string; indicador: string }>, corte: number) {
+function aActividad(a: FilaActividad, seguimiento: FilaSeguimiento[], metas: Map<string, { objetivo: string; indicador: string | null }>, corte: number) {
   const propio = seguimiento.filter((s) => s.activityId === a.id).sort((x, y) => x.month - y.month);
   const seg = propio.map((s) => ({ mes: s.month, ejecutado: s.executed }));
   const ejecutados = propio.filter((s) => s.executed && a.plannedMonths.includes(s.month)).length;
@@ -297,7 +297,7 @@ export class PlanTrabajoService {
         { texto: String(i + 1), alinear: 'center' },
         [a.titulo, a.descripcion, a.entregable ? `Entregable: ${a.entregable}` : null, a.origen !== 'manual' ? `Origen: ${nombreDe(ORIGENES_ACTIVIDAD, a.origen)}` : null, a.estado === 'cancelada' ? 'CANCELADA' : null].filter(Boolean).join('\n'),
         [a.pasoNumero ? `Paso ${a.pasoNumero}` : 'Sin paso', nombreDe(FASES_PHVA, a.fase)].join('\n'),
-        a.meta ? `${a.meta.objetivo}\n${a.meta.indicador}` : '—',
+        a.meta ? [a.meta.objetivo, a.meta.indicador].filter(Boolean).join('\n') : '—',
         a.responsable,
         [a.recursos, a.presupuesto != null ? `Ppto.: ${pesos(a.presupuesto)}` : null, a.presupuestoEjecutado != null ? `Ejec.: ${pesos(a.presupuestoEjecutado)}` : null].filter(Boolean).join('\n') || '—',
         ...MESES.map((_, m) => celdaMes(a, m + 1)),
@@ -368,7 +368,7 @@ export class PlanTrabajoService {
           a.pasoNumero,
           a.titulo,
           a.descripcion,
-          a.meta ? `${a.meta.objetivo} — ${a.meta.indicador}` : null,
+          a.meta ? [a.meta.objetivo, a.meta.indicador].filter(Boolean).join(' — ') : null,
           nombreDe(ORIGENES_ACTIVIDAD, a.origen),
           a.responsable,
           a.recursos,

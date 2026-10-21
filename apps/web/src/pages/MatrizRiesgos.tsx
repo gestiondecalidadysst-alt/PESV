@@ -597,7 +597,7 @@ function FilaMedida({ m, gestiona }: { m: Medida; gestiona: boolean }) {
           <Insignia tono={m.estado === 'implementada' ? 'exito' : m.estado === 'en_curso' ? 'aviso' : 'neutro'}>{ESTADO_MEDIDA[m.estado]}</Insignia>
         )}
         {m.actividadPlanId ? (
-          <Link to="/planificacion" className="text-sm font-semibold text-[#1d4e89] underline">En el plan de trabajo</Link>
+          <Link to="/plan-trabajo" className="text-sm font-semibold text-[#1d4e89] underline">En el plan de trabajo</Link>
         ) : (
           gestiona && <Boton variante="secundario" cargando={alPlan.isPending} onClick={() => alPlan.mutate(undefined)}>Enviar al plan de trabajo</Boton>
         )}

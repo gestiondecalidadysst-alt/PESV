@@ -30,7 +30,7 @@ const Siniestros = cargar(() => import('./pages/Siniestros'), 'Siniestros');
 const SiniestroDetalle = cargar(() => import('./pages/Siniestros'), 'SiniestroDetalle');
 const Comite = cargar(() => import('./pages/Comite'), 'Comite');
 const ReunionComite = cargar(() => import('./pages/Comite'), 'ReunionComite');
-const Planificacion = cargar(() => import('./pages/Planificacion'), 'Planificacion');
+const Indicadores = cargar(() => import('./pages/Indicadores'), 'Indicadores');
 const MatrizRiesgos = cargar(() => import('./pages/MatrizRiesgos'), 'MatrizRiesgos');
 const PlanTrabajo = cargar(() => import('./pages/PlanTrabajo'), 'PlanTrabajo');
 const Capacitacion = cargar(() => import('./pages/Capacitacion'), 'Capacitacion');
@@ -108,7 +108,8 @@ const router = createBrowserRouter([
           { path: 'matriz-riesgos', element: conCarga(<MatrizRiesgos />) },
           { path: 'plan-trabajo', element: conCarga(<PlanTrabajo />) },
           { path: 'capacitacion', element: conCarga(<Capacitacion />) },
-          { path: 'planificacion', element: conCarga(<Planificacion />) },
+          { path: 'indicadores', element: conCarga(<Indicadores />) },
+          { path: 'planificacion', element: <Navigate to="/indicadores?vista=metas" replace /> },
           { path: 'acciones', element: conCarga(<Acciones />) },
           { path: 'vigia', element: conCarga(<Vigia />) },
           { path: 'auditorias', element: conCarga(<Auditorias />) },

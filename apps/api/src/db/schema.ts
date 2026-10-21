@@ -497,12 +497,54 @@ export const goals = pgTable('goals', {
   organizationId: org(),
   year: smallint('year').notNull(),
   objective: text('objective').notNull(),
-  indicator: text('indicator').notNull(),
+  indicator: text('indicator'),
   target: numeric('target', { mode: 'number' }).notNull(),
   currentValue: numeric('current_value', { mode: 'number' }),
   direction: text('direction').notNull().default('menor_o_igual'),
   createdAt: creado(),
+  indicatorId: uuid('indicator_id'),
 });
+
+export const indicators = pgTable('indicators', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  calculation: text('calculation'),
+  name: text('name').notNull(),
+  objective: text('objective'),
+  kind: text('kind').notNull(),
+  formula: text('formula').notNull(),
+  unit: text('unit').notNull(),
+  frequency: text('frequency').notNull(),
+  direction: text('direction').notNull(),
+  target: numeric('target', { mode: 'number' }).notNull(),
+  warning: numeric('warning', { mode: 'number' }),
+  dataSource: text('data_source'),
+  responsibleName: text('responsible_name'),
+  stepNumber: smallint('step_number'),
+  active: boolean('active').notNull().default(true),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+  updatedAt: actualizado(),
+});
+
+export const indicatorResults = pgTable(
+  'indicator_results',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: org(),
+    indicatorId: uuid('indicator_id').notNull(),
+    period: text('period').notNull(),
+    value: numeric('value', { mode: 'number' }),
+    numerator: numeric('numerator', { mode: 'number' }),
+    denominator: numeric('denominator', { mode: 'number' }),
+    origin: text('origin').notNull(),
+    analysis: text('analysis'),
+    actionId: uuid('action_id'),
+    recordedBy: uuid('recorded_by'),
+    recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.indicatorId, t.period)],
+);
 
 export const planActivities = pgTable('plan_activities', {
   id: uuid('id').primaryKey().defaultRandom(),

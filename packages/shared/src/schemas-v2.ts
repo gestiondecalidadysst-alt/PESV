@@ -10,6 +10,7 @@ import {
   NIVELES_DEFICIENCIA,
   NIVELES_EXPOSICION,
 } from './catalog/matriz-riesgos';
+import { IDS_FASE_PHVA } from './catalog/plan-trabajo';
 
 const fecha = z
   .string()
@@ -125,3 +126,39 @@ export const medidaSchema = z.object({
   estado: z.enum(['pendiente', 'en_curso', 'implementada']).default('pendiente'),
 });
 export type MedidaInput = z.infer<typeof medidaSchema>;
+
+// Plan anual de trabajo (paso 9) ------------------------------------------------------
+
+const mes = z.number().int().min(1).max(12);
+
+export const actividadTrabajoSchema = z.object({
+  anio: z.number().int().min(2020).max(2100),
+  titulo: texto(3, 300, 'Escribe la actividad'),
+  descripcion: opcional(2000),
+  pasoNumero: z.number().int().min(1).max(24).nullable().optional(),
+  metaId: z.string().uuid().nullable().optional(),
+  fase: z.enum(IDS_FASE_PHVA).default('hacer'),
+  responsable: texto(3, 150, 'Indica el responsable'),
+  recursos: opcional(1000),
+  entregable: opcional(500),
+  presupuesto: z.number().min(0).max(100_000_000_000).nullable().optional(),
+  presupuestoEjecutado: z.number().min(0).max(100_000_000_000).nullable().optional(),
+  meses: z
+    .array(mes)
+    .min(1, 'Programa al menos un mes')
+    .transform((m) => [...new Set(m)].sort((a, b) => a - b)),
+  cancelada: z.boolean().default(false),
+});
+export type ActividadTrabajoInput = z.infer<typeof actividadTrabajoSchema>;
+
+export const seguimientoActividadSchema = z
+  .object({
+    // Llega como texto cuando el seguimiento trae un archivo (formulario multipart).
+    mes: z.coerce.number().int().min(1).max(12),
+    ejecutado: z.preprocess((v) => v === true || v === 'true', z.boolean()),
+    fecha: z.preprocess((v) => (v === '' ? null : v), fecha.nullable().optional()),
+    nota: opcional(2000),
+  })
+  .refine((s) => !s.ejecutado || !!s.fecha, { message: 'Indica la fecha de ejecución', path: ['fecha'] })
+  .refine((s) => s.ejecutado || !!s.nota, { message: 'Explica por qué no se ejecutó', path: ['nota'] });
+export type SeguimientoActividadInput = z.infer<typeof seguimientoActividadSchema>;

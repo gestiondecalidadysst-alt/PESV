@@ -1,9 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  actividadPlanSchema,
   capacitacionSchema,
   metaSchema,
-  type ActividadPlanInput,
   type CapacitacionInput,
   type MetaInput,
 } from '@pesv/shared';
@@ -17,7 +15,7 @@ import { useAccion, useConsulta } from '../lib/consultas';
 import { useSesion } from '../lib/sesion';
 import type { Conductor } from '../lib/tipos';
 
-type Pestana = 'metas' | 'plan' | 'capacitaciones';
+type Pestana = 'metas' | 'capacitaciones';
 const numero = (v: string) => (v === '' ? null : Number(v));
 const entero = (v: string) => (v === '' ? undefined : Number(v));
 
@@ -27,19 +25,17 @@ export function Planificacion() {
     <Pagina>
       <Encabezado
         titulo="Planificación"
-        descripcion={<>Objetivos y metas (paso 7), plan anual de trabajo (paso 9) y plan anual de formación (paso 10). La matriz de riesgos (paso 6) está en <Link to="/matriz-riesgos" className="font-semibold text-[#1d4e89] underline">Matriz de riesgos</Link>.</>}
+        descripcion={<>Objetivos y metas (paso 7) y plan anual de formación (paso 10). La matriz de riesgos (paso 6) y el plan de trabajo (paso 9) tienen su propia sección: <Link to="/matriz-riesgos" className="font-semibold text-[#1d4e89] underline">Matriz de riesgos</Link> y <Link to="/plan-trabajo" className="font-semibold text-[#1d4e89] underline">Plan de trabajo</Link>.</>}
       />
       <Pestanas
         valor={pestana}
         alCambiar={setPestana}
         opciones={[
           { id: 'metas', nombre: 'Objetivos y metas' },
-          { id: 'plan', nombre: 'Plan anual' },
           { id: 'capacitaciones', nombre: 'Capacitaciones' },
         ]}
       />
       {pestana === 'metas' && <Metas />}
-      {pestana === 'plan' && <PlanAnual />}
       {pestana === 'capacitaciones' && <Capacitaciones />}
     </Pagina>
   );
@@ -145,115 +141,6 @@ function SelectorAnio({ anio, alCambiar }: { anio: number; alCambiar: (a: number
     <Selector id="anio" etiqueta="Año" className="max-w-40" value={anio} onChange={(e) => alCambiar(Number(e.target.value))}>
       {[actual + 1, actual, actual - 1, actual - 2].map((a) => <option key={a} value={a}>{a}</option>)}
     </Selector>
-  );
-}
-
-// Plan anual ------------------------------------------------------------------
-
-interface Actividad {
-  id: string;
-  anio: number;
-  titulo: string;
-  pasoNumero: number | null;
-  responsable: string;
-  inicio: string;
-  fin: string;
-  estado: ActividadPlanInput['estado'];
-  ejecutadaEl: string | null;
-  presupuesto: number | null;
-  atrasada: boolean;
-}
-const ESTADO_ACTIVIDAD = { planeada: 'Planeada', en_curso: 'En curso', ejecutada: 'Ejecutada', cancelada: 'Cancelada' } as const;
-
-function PlanAnual() {
-  const { puede } = useSesion();
-  const [anio, setAnio] = useState(new Date().getFullYear());
-  const plan = useConsulta<Actividad[]>(['plan', anio], `/org/plan?anio=${anio}`);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<z.input<typeof actividadPlanSchema>, unknown, ActividadPlanInput>({
-    resolver: zodResolver(actividadPlanSchema),
-    defaultValues: { anio, estado: 'planeada' },
-  });
-  const crear = useAccion((d: ActividadPlanInput) => api.post('/org/plan', d), { alTerminar: () => reset({ anio, estado: 'planeada' }) });
-  const cambiarEstado = useAccion(({ a, estado }: { a: Actividad; estado: Actividad['estado'] }) =>
-    api.patch(`/org/plan/${a.id}`, {
-      anio: a.anio,
-      titulo: a.titulo,
-      pasoNumero: a.pasoNumero,
-      responsable: a.responsable,
-      inicio: a.inicio,
-      fin: a.fin,
-      presupuesto: a.presupuesto,
-      estado,
-      ejecutadaEl: estado === 'ejecutada' ? new Date().toISOString().slice(0, 10) : null,
-    }),
-  );
-  const total = plan.data?.filter((a) => a.estado !== 'cancelada').length ?? 0;
-  const ejecutadas = plan.data?.filter((a) => a.estado === 'ejecutada').length ?? 0;
-  return (
-    <>
-      <div className="flex flex-wrap items-end gap-6">
-        <SelectorAnio anio={anio} alCambiar={setAnio} />
-        {total > 0 && <p className="pb-2 text-sm">Ejecución del plan: <strong>{Math.round((ejecutadas / total) * 100)} %</strong> ({ejecutadas} de {total} actividades)</p>}
-      </div>
-      {plan.isPending ? <Cargando /> : plan.data?.length ? (
-        <Tabla minimo="50rem">
-          <thead>
-            <tr>
-              <th className={th}>Actividad</th>
-              <th className={th}>Paso</th>
-              <th className={th}>Responsable</th>
-              <th className={th}>Fechas</th>
-              <th className={th}>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {plan.data.map((a) => (
-              <tr key={a.id}>
-                <td className={td}><strong className="text-noche">{a.titulo}</strong>{a.atrasada && <> <Insignia tono="peligro">Atrasada</Insignia></>}</td>
-                <td className={td}>{a.pasoNumero ?? '—'}</td>
-                <td className={td}>{a.responsable}</td>
-                <td className={td}>{fecha(a.inicio)} – {fecha(a.fin)}</td>
-                <td className={td}>
-                  {puede('gestionar_pesv') ? (
-                    <select
-                      aria-label={`Estado de ${a.titulo}`}
-                      className="rounded-lg border border-linea px-2 py-1"
-                      value={a.estado}
-                      onChange={(e) => cambiarEstado.mutate({ a, estado: e.target.value as Actividad['estado'] })}
-                    >
-                      {Object.entries(ESTADO_ACTIVIDAD).map(([v, t]) => <option key={v} value={v}>{t}</option>)}
-                    </select>
-                  ) : ESTADO_ACTIVIDAD[a.estado]}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Tabla>
-      ) : (
-        <Vacio titulo={`Sin plan para ${anio}`}>Programa las actividades del año con responsable y fechas; el comité revisa su ejecución.</Vacio>
-      )}
-      <Aviso error={plan.error ?? cambiarEstado.error} />
-      {puede('gestionar_pesv') && (
-        <Tarjeta>
-          <Subtitulo>Nueva actividad</Subtitulo>
-          <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit((d) => crear.mutate(d))}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Campo id="pa-titulo" etiqueta="Actividad" error={errors.titulo?.message} {...register('titulo')} />
-              <Campo id="pa-resp" etiqueta="Responsable" error={errors.responsable?.message} {...register('responsable')} />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-5">
-              <Campo id="pa-anio" etiqueta="Año" type="number" {...register('anio', { setValueAs: Number })} />
-              <Campo id="pa-paso" etiqueta="Paso PESV" type="number" min={1} max={24} {...register('pasoNumero', { setValueAs: numero })} />
-              <Campo id="pa-inicio" etiqueta="Inicio" type="date" error={errors.inicio?.message} {...register('inicio')} />
-              <Campo id="pa-fin" etiqueta="Fin" type="date" error={errors.fin?.message} {...register('fin')} />
-              <Campo id="pa-ppto" etiqueta="Presupuesto (COP)" type="number" min={0} {...register('presupuesto', { setValueAs: numero })} />
-            </div>
-            <Aviso error={crear.error} />
-            <Boton type="submit" className="self-start" cargando={crear.isPending}>Agregar al plan</Boton>
-          </form>
-        </Tarjeta>
-      )}
-    </>
   );
 }
 

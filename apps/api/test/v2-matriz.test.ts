@@ -53,14 +53,18 @@ describe.skipIf(!hayBaseDeDatos)('V2 · matriz de riesgos viales', () => {
 
     const enviado = await c.agente.post(`/api/org/matriz/medidas/${m.body.id}/plan`).set(h()).expect(201);
     await c.agente.post(`/api/org/matriz/medidas/${m.body.id}/plan`).set(h()).expect(400);
-    const plan = await c.agente.get('/api/org/plan').set(h()).expect(200);
-    const actividad = plan.body.find((a: { id: string }) => a.id === enviado.body.actividadId);
-    expect(actividad).toMatchObject({ titulo: 'Programa de gestión de la fatiga', pasoNumero: 8, origen: 'riesgo', estado: 'planeada', fin: `${new Date().getFullYear()}-12-15` });
+    const plan = await c.agente.get('/api/org/plan-trabajo').set(h()).expect(200);
+    const actividad = plan.body.actividades.find((a: { id: string }) => a.id === enviado.body.actividadId);
+    expect(actividad).toMatchObject({ titulo: 'Programa de gestión de la fatiga', pasoNumero: 8, origen: 'riesgo', estado: 'planeada', meses: [12] });
 
     // Al implementar la medida, la actividad del plan queda ejecutada.
     await c.agente.patch(`/api/org/matriz/medidas/${m.body.id}`).set(h()).send({ jerarquia: 'administrativos', descripcion: 'Programa de gestión de la fatiga', estado: 'implementada' }).expect(200);
-    const despues = await c.agente.get('/api/org/plan').set(h()).expect(200);
-    expect(despues.body.find((a: { id: string }) => a.id === enviado.body.actividadId).estado).toBe('ejecutada');
+    const despues = await c.agente.get('/api/org/plan-trabajo').set(h()).expect(200);
+    expect(despues.body.actividades.find((a: { id: string }) => a.id === enviado.body.actividadId)).toMatchObject({ estado: 'ejecutada', avance: 100 });
+    // Si se reabre la medida, el mes vuelve a quedar pendiente en el cronograma.
+    await c.agente.patch(`/api/org/matriz/medidas/${m.body.id}`).set(h()).send({ jerarquia: 'administrativos', descripcion: 'Programa de gestión de la fatiga', estado: 'en_curso' }).expect(200);
+    const reabierta = await c.agente.get('/api/org/plan-trabajo').set(h()).expect(200);
+    expect(reabierta.body.actividades.find((a: { id: string }) => a.id === enviado.body.actividadId)).toMatchObject({ estado: 'planeada', avance: 0 });
   });
 
   it('cambia a matriz 5×5 y conserva los riesgos evaluados con GTC 45', async () => {

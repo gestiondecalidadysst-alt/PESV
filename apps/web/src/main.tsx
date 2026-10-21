@@ -32,6 +32,7 @@ const Comite = cargar(() => import('./pages/Comite'), 'Comite');
 const ReunionComite = cargar(() => import('./pages/Comite'), 'ReunionComite');
 const Planificacion = cargar(() => import('./pages/Planificacion'), 'Planificacion');
 const MatrizRiesgos = cargar(() => import('./pages/MatrizRiesgos'), 'MatrizRiesgos');
+const PlanTrabajo = cargar(() => import('./pages/PlanTrabajo'), 'PlanTrabajo');
 const Desplazamientos = cargar(() => import('./pages/Desplazamientos'), 'Desplazamientos');
 const Acciones = cargar(() => import('./pages/Acciones'), 'Acciones');
 const Vigia = cargar(() => import('./pages/Vigia'), 'Vigia');
@@ -104,6 +105,7 @@ const router = createBrowserRouter([
           { path: 'comite', element: conCarga(<Comite />) },
           { path: 'comite/:id', element: conCarga(<ReunionComite />) },
           { path: 'matriz-riesgos', element: conCarga(<MatrizRiesgos />) },
+          { path: 'plan-trabajo', element: conCarga(<PlanTrabajo />) },
           { path: 'planificacion', element: conCarga(<Planificacion />) },
           { path: 'acciones', element: conCarga(<Acciones />) },
           { path: 'vigia', element: conCarga(<Vigia />) },

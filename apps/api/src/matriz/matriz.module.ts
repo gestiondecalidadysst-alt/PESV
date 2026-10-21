@@ -48,6 +48,7 @@ import { enviarArchivo, FormatoService, MIME_PDF, MIME_XLSX } from '../documento
 import { generarExcel, type ValorExcel } from '../documentos/excel.js';
 import { DocumentoPdf, type CeldaPdf } from '../documentos/pdf.js';
 import { EvidenciasModule, EvidenciasService } from '../evidencias/evidencias.module.js';
+import { ejecutarMesesPendientes, fechasDeMeses, revertirMedidaImplementada, sincronizarActividad } from '../plan-trabajo/sincronizar.js';
 import { evaluacionInherente, evaluacionResidual } from './evaluacion.js';
 
 type FilaRiesgo = typeof roadRisks.$inferSelect;
@@ -247,13 +248,14 @@ export class MatrizService {
         .where(eq(riskMeasures.id, id))
         .returning();
       if (!m) throw new NotFoundException('Medida no encontrada');
-      // Si la medida está en el plan de trabajo, el plan refleja su avance.
+      // Si la medida está en el plan de trabajo, el cronograma refleja su avance.
       if (m.planActivityId) {
-        const estado = input.estado === 'implementada' ? 'ejecutada' : input.estado === 'en_curso' ? 'en_curso' : 'planeada';
-        await tx
-          .update(planActivities)
-          .set({ status: estado, executedOn: estado === 'ejecutada' ? hoy() : null })
-          .where(eq(planActivities.id, m.planActivityId));
+        if (input.estado === 'implementada') {
+          await ejecutarMesesPendientes(tx, m.planActivityId, hoy(), actorId);
+        } else {
+          await revertirMedidaImplementada(tx, m.planActivityId);
+        }
+        await sincronizarActividad(tx, m.planActivityId, false);
       }
       await auditar(tx, { organizacionId: orgId, actorId, accion: 'riesgo.medida_actualizada', entidad: 'risk_measure', entidadId: id, datos: { estado: input.estado } });
       return aMedida(m);
@@ -275,25 +277,33 @@ export class MatrizService {
       if (!m) throw new NotFoundException('Medida no encontrada');
       if (m.planActivityId) throw new BadRequestException('Esta medida ya está en el plan de trabajo');
       const r = await this.riesgo(tx, m.riskId);
-      const fin = m.dueOn ?? `${new Date().getFullYear()}-12-31`;
-      const inicio = hoy() <= fin ? hoy() : fin;
+      // Se programa en el mes de la fecha límite (o en el mes actual si no tiene).
+      const fin = m.dueOn ?? hoy();
+      const anio = Number(fin.slice(0, 4));
+      const meses = [Number(fin.slice(5, 7))];
       const jerarquia = nombre(JERARQUIA_CONTROLES.map((j) => ({ id: j.id, nombre: j.nombre })), m.hierarchy);
       const [a] = await tx
         .insert(planActivities)
         .values({
           organizationId: orgId,
-          year: Number(fin.slice(0, 4)),
+          year: anio,
           title: m.description,
+          description: `Medida de intervención (${jerarquia}) para el riesgo «${r.hazard}».`,
           stepNumber: 8,
+          phase: 'hacer',
           responsibleName: m.responsibleName ?? r.ownerName ?? 'Por asignar',
-          plannedStart: inicio,
-          plannedEnd: fin,
-          status: m.status === 'implementada' ? 'ejecutada' : m.status === 'en_curso' ? 'en_curso' : 'planeada',
+          ...fechasDeMeses(anio, meses),
+          plannedMonths: meses,
+          status: 'planeada',
           source: 'riesgo',
           sourceId: m.id,
         })
         .returning();
       await tx.update(riskMeasures).set({ planActivityId: a!.id, updatedAt: new Date() }).where(eq(riskMeasures.id, m.id));
+      if (m.status === 'implementada') {
+        await ejecutarMesesPendientes(tx, a!.id, hoy(), actorId);
+        await sincronizarActividad(tx, a!.id, false);
+      }
       await auditar(tx, { organizacionId: orgId, actorId, accion: 'riesgo.medida_al_plan', entidad: 'plan_activity', entidadId: a!.id, datos: { riesgo: r.hazard, jerarquia } });
       return { actividadId: a!.id };
     });

@@ -1,10 +1,8 @@
 import { Body, Controller, Get, Injectable, Module, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
 import {
-  actividadPlanSchema,
   asistentesCapacitacionSchema,
   capacitacionSchema,
   metaSchema,
-  type ActividadPlanInput,
   type AsistentesCapacitacionInput,
   type CapacitacionInput,
   type MetaInput,
@@ -14,7 +12,7 @@ import { OrgActual, Permiso, UsuarioActual, type OrgSesion, type UsuarioSesion }
 import { auditar } from '../common/audit.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { DatabaseService } from '../db/database.service.js';
-import { goals, planActivities, trainingAttendance, trainings } from '../db/schema.js';
+import { goals, trainingAttendance, trainings } from '../db/schema.js';
 
 type FilaMeta = typeof goals.$inferSelect;
 
@@ -59,48 +57,6 @@ export class PlanificacionService {
       if (!m) throw new NotFoundException('Meta no encontrada');
       await auditar(tx, { organizacionId: orgId, actorId, accion: id ? 'meta.actualizada' : 'meta.creada', entidad: 'goal', entidadId: m.id });
       return aMeta(m);
-    });
-  }
-
-  plan(orgId: string, anio: number) {
-    return this.database.withTenant(orgId, async (tx) =>
-      (await tx.select().from(planActivities).where(eq(planActivities.year, anio)).orderBy(asc(planActivities.plannedStart))).map((a) => ({
-        id: a.id,
-        anio: a.year,
-        titulo: a.title,
-        pasoNumero: a.stepNumber,
-        responsable: a.responsibleName,
-        inicio: a.plannedStart,
-        fin: a.plannedEnd,
-        estado: a.status,
-        ejecutadaEl: a.executedOn,
-        presupuesto: a.budget,
-        origen: a.source,
-        origenId: a.sourceId,
-        atrasada: a.status !== 'ejecutada' && a.status !== 'cancelada' && a.plannedEnd < new Date().toISOString().slice(0, 10),
-      })),
-    );
-  }
-
-  guardarActividad(orgId: string, input: ActividadPlanInput, actorId: string, id?: string) {
-    return this.database.withTenant(orgId, async (tx) => {
-      const valores = {
-        year: input.anio,
-        title: input.titulo,
-        stepNumber: input.pasoNumero ?? null,
-        responsibleName: input.responsable,
-        plannedStart: input.inicio,
-        plannedEnd: input.fin,
-        status: input.estado,
-        executedOn: input.estado === 'ejecutada' ? (input.ejecutadaEl ?? new Date().toISOString().slice(0, 10)) : null,
-        budget: input.presupuesto ?? null,
-      };
-      const [a] = id
-        ? await tx.update(planActivities).set(valores).where(eq(planActivities.id, id)).returning()
-        : await tx.insert(planActivities).values({ organizationId: orgId, ...valores }).returning();
-      if (!a) throw new NotFoundException('Actividad no encontrada');
-      await auditar(tx, { organizacionId: orgId, actorId, accion: id ? 'plan.actividad_actualizada' : 'plan.actividad_creada', entidad: 'plan_activity', entidadId: a.id });
-      return a;
     });
   }
 
@@ -178,15 +134,6 @@ export class PlanificacionController {
 
   @Patch('metas/:id') @Permiso('gestionar_pesv')
   editarMeta(@Param('id', ParseUUIDPipe) id: string, @Body(new ZodValidationPipe(metaSchema)) b: MetaInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.guardarMeta(o.id, b, u.id, id); }
-
-  @Get('plan') @Permiso('ver')
-  plan(@OrgActual() o: OrgSesion, @Query('anio') anio?: string) { return this.s.plan(o.id, anio ? Number(anio) : new Date().getFullYear()); }
-
-  @Post('plan') @Permiso('gestionar_pesv')
-  crearActividad(@Body(new ZodValidationPipe(actividadPlanSchema)) b: ActividadPlanInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.guardarActividad(o.id, b, u.id); }
-
-  @Patch('plan/:id') @Permiso('gestionar_pesv')
-  editarActividad(@Param('id', ParseUUIDPipe) id: string, @Body(new ZodValidationPipe(actividadPlanSchema)) b: ActividadPlanInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.guardarActividad(o.id, b, u.id, id); }
 
   @Get('capacitaciones') @Permiso('ver')
   capacitaciones(@OrgActual() o: OrgSesion) { return this.s.capacitaciones(o.id); }

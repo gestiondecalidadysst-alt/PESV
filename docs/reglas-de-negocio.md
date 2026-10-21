@@ -77,6 +77,11 @@ regla ya está implementada.
 | RN-44 | Son riesgos críticos los de nivel I y II (GTC 45) o alto y extremo (5×5); exigen medidas de intervención y alimentan los programas del paso 8 y el indicador de riesgos altos de VIGIA. | Implementada |
 | RN-45 | Las medidas de intervención se clasifican por la jerarquía de controles (eliminación, sustitución, ingeniería, administrativos, EPP). Una medida enviada al plan de trabajo crea una sola actividad (paso 8) y el avance de la medida actualiza el estado de esa actividad. | Implementada |
 | RN-46 | La matriz se puede guardar como evidencia del paso 6 en PDF; queda en borrador hasta que el líder PESV la apruebe. | Implementada |
+| RN-47 | Cada actividad del plan anual de trabajo (paso 9) se programa en uno o varios meses del año, con responsable, fase PHVA y, si aplica, el paso del PESV, la meta del mismo año (paso 7), los recursos y el presupuesto. | Implementada |
+| RN-48 | El estado de una actividad sale de su seguimiento mensual: programada sin registros, en ejecución con avance parcial y ejecutada cuando todos sus meses programados se ejecutaron. Solo la cancelación es manual, y una actividad cancelada no cuenta en el cumplimiento. | Implementada |
+| RN-49 | Cumplimiento del plan a la fecha = meses-actividad ejecutados ÷ meses-actividad programados hasta el mes en curso. Un mes programado ya vencido sin ejecutar marca la actividad como atrasada; si no se ejecutó, el seguimiento exige una justificación. | Implementada |
+| RN-50 | El soporte que se adjunta al seguimiento queda como evidencia del paso de la actividad, pendiente de aprobación. El plan completo se puede guardar como evidencia del paso 9. | Implementada |
+| RN-51 | Una actividad que viene de una medida de la matriz se sincroniza con ella: al ejecutarse el plan la medida queda implementada, y al implementar la medida se dan por ejecutados sus meses pendientes. | Implementada |
 
 ## Cuentas, suscripción y datos
 

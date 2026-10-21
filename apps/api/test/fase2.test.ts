@@ -163,7 +163,8 @@ describe.skipIf(!hayBaseDeDatos)('Fase 2', () => {
         .expect(201);
       expect(r.body.inherente).toMatchObject({ valor: 16, nivel: 'Extremo', critico: true });
       await c.agente.post('/api/org/metas').set(h()).send({ anio: ahora.getFullYear(), objetivo: 'Cero fallecidos', indicador: 'Fallecidos en siniestros', meta: 0, valorActual: 0 }).expect(201);
-      await c.agente.post('/api/org/plan').set(h()).send({ anio: ahora.getFullYear(), titulo: 'Simulacro de emergencia vial', pasoNumero: 12, responsable: 'Líder PESV', inicio: hoyMas(-10), fin: hoyMas(-1), estado: 'ejecutada' }).expect(201);
+      const act = await c.agente.post('/api/org/plan-trabajo').set(h()).send({ anio: ahora.getFullYear(), titulo: 'Simulacro de emergencia vial', pasoNumero: 12, responsable: 'Líder PESV', meses: [ahora.getMonth() + 1] }).expect(201);
+      await c.agente.post(`/api/org/plan-trabajo/${act.body.id}/seguimiento`).set(h()).send({ mes: ahora.getMonth() + 1, ejecutado: true, fecha: hoyMas(0) }).expect(201);
       const cap = await c.agente.post('/api/org/capacitaciones').set(h()).send({ titulo: 'Manejo defensivo', tema: 'Distancia de seguimiento', programadaEl: hoyMas(0), estado: 'ejecutada', horas: 2 }).expect(201);
       await c.agente.put(`/api/org/capacitaciones/${cap.body.id}/asistentes`).set(h()).send({ asistentes: [{ conductorId, nombre: 'Ana Ruiz', documento: '1067111222' }] }).expect(200);
       const metas = await c.agente.get('/api/org/metas').set(h()).expect(200);

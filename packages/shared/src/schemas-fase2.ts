@@ -148,21 +148,6 @@ export const metaSchema = z.object({
 });
 export type MetaInput = z.infer<typeof metaSchema>;
 
-export const actividadPlanSchema = z
-  .object({
-    anio: z.number().int().min(2020).max(2100),
-    titulo: texto(3, 300, 'Escribe la actividad'),
-    pasoNumero: z.number().int().min(1).max(24).optional().nullable(),
-    responsable: texto(3, 150, 'Indica el responsable'),
-    inicio: fecha,
-    fin: fecha,
-    estado: z.enum(['planeada', 'en_curso', 'ejecutada', 'cancelada']).default('planeada'),
-    ejecutadaEl: fecha.optional().nullable(),
-    presupuesto: dinero.optional().nullable(),
-  })
-  .refine((v) => v.fin >= v.inicio, { message: 'La fecha final no puede ser anterior a la inicial', path: ['fin'] });
-export type ActividadPlanInput = z.infer<typeof actividadPlanSchema>;
-
 export const capacitacionSchema = z.object({
   titulo: texto(3, 200, 'Escribe el título'),
   tema: texto(3, 300, 'Escribe el tema'),

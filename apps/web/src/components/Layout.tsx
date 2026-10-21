@@ -31,6 +31,7 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/copiloto', nombre: 'Copiloto IA', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/comite', nombre: 'Comité de seguridad vial', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/matriz-riesgos', nombre: 'Matriz de riesgos', permiso: 'ver', grupo: 'Gestión' },
+  { ruta: '/plan-trabajo', nombre: 'Plan de trabajo', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/planificacion', nombre: 'Planificación', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/acciones', nombre: 'Acciones y compromisos', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/flota', nombre: 'Flota y conductores', permiso: 'ver', grupo: 'Operación' },

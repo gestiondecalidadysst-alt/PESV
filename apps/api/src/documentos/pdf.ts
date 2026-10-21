@@ -94,7 +94,8 @@ export class DocumentoPdf {
     const anchoCol = this.ancho / columnas;
     for (let i = 0; i < pares.length; i += columnas) {
       const fila = pares.slice(i, i + columnas);
-      const alto = Math.max(...fila.map(([k, v]) => this.doc.font('Helvetica').fontSize(9).heightOfString(`${k}: ${v}`, { width: anchoCol - 8 }))) + 4;
+      // Se mide en negrilla (la etiqueta lo es y ocupa más) para que el texto que se parte no se monte en la fila siguiente.
+      const alto = Math.max(...fila.map(([k, v]) => this.doc.font('Helvetica-Bold').fontSize(9).heightOfString(`${k}: ${v || '—'}`, { width: anchoCol - 8 }))) + 4;
       this.asegurar(alto);
       const y = this.doc.y;
       fila.forEach(([k, v], j) => {

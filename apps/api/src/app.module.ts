@@ -7,6 +7,7 @@ import { DesplazamientosModule } from './desplazamientos/desplazamientos.module.
 import { MantenimientoModule } from './mantenimiento/mantenimiento.module.js';
 import { PlanificacionModule } from './planificacion/planificacion.module.js';
 import { MatrizModule } from './matriz/matriz.module.js';
+import { PlanTrabajoModule } from './plan-trabajo/plan-trabajo.module.js';
 import { SiniestrosModule } from './siniestros/siniestros.module.js';
 import { TareasModule } from './tareas/tareas.module.js';
 import { VigiaModule } from './vigia/vigia.module.js';
@@ -52,6 +53,7 @@ import { TelematicaModule } from './telematica/telematica.module.js';
     ComiteModule,
     PlanificacionModule,
     MatrizModule,
+    PlanTrabajoModule,
     DesplazamientosModule,
     VigiaModule,
     TareasModule,

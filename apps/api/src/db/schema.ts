@@ -11,6 +11,7 @@ import {
   smallint,
   text,
   timestamp,
+  unique,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -519,7 +520,33 @@ export const planActivities = pgTable('plan_activities', {
   createdAt: creado(),
   source: text('source').notNull().default('manual'),
   sourceId: uuid('source_id'),
+  goalId: uuid('goal_id'),
+  phase: text('phase').notNull().default('hacer'),
+  description: text('description'),
+  resources: text('resources'),
+  deliverable: text('deliverable'),
+  executedBudget: numeric('executed_budget', { mode: 'number' }),
+  plannedMonths: smallint('planned_months').array().notNull().default([]),
+  updatedAt: actualizado(),
 });
+
+export const planFollowups = pgTable(
+  'plan_followups',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: org(),
+    activityId: uuid('activity_id').notNull(),
+    month: smallint('month').notNull(),
+    executed: boolean('executed').notNull(),
+    executedOn: date('executed_on'),
+    note: text('note'),
+    evidenceId: uuid('evidence_id'),
+    createdBy: uuid('created_by'),
+    createdAt: creado(),
+    updatedAt: actualizado(),
+  },
+  (t) => [unique().on(t.activityId, t.month)],
+);
 
 export const trainings = pgTable('trainings', {
   id: uuid('id').primaryKey().defaultRandom(),

@@ -7,6 +7,7 @@ import { DesplazamientosModule } from './desplazamientos/desplazamientos.module.
 import { MantenimientoModule } from './mantenimiento/mantenimiento.module.js';
 import { IndicadoresModule } from './indicadores/indicadores.module.js';
 import { PerfilModule } from './perfil/perfil.module.js';
+import { DocumentosControladosModule } from './documentos-controlados/documentos-controlados.module.js';
 import { MatrizModule } from './matriz/matriz.module.js';
 import { PlanTrabajoModule } from './plan-trabajo/plan-trabajo.module.js';
 import { CapacitacionModule } from './capacitacion/capacitacion.module.js';
@@ -55,6 +56,7 @@ import { TelematicaModule } from './telematica/telematica.module.js';
     ComiteModule,
     IndicadoresModule,
     PerfilModule,
+    DocumentosControladosModule,
     MatrizModule,
     PlanTrabajoModule,
     CapacitacionModule,

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IDS_TIPO_DOCUMENTO } from './catalog/documentos';
+import { IDS_CLASE_DOCUMENTO, IDS_TIPO_DOCUMENTO } from './catalog/documentos';
 import {
   IDS_ACTOR_VIAL,
   IDS_FACTOR_RIESGO_VIAL,
@@ -293,3 +293,44 @@ export const respuestaEncuestaSchema = z.object({
   respuestas: z.record(z.string(), z.union([z.string().max(500), z.array(z.string().max(60)).max(20)])),
 });
 export type RespuestaEncuestaInput = z.infer<typeof respuestaEncuestaSchema>;
+
+// Documentos controlados (pasos 3 y 19) ----------------------------------------------
+
+export const documentoControladoSchema = z.object({
+  clase: z.enum(IDS_CLASE_DOCUMENTO),
+  titulo: texto(3, 200, 'Escribe el título'),
+  codigo: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z0-9][A-Z0-9.-]{1,29}$/, 'Usa letras, números, punto o guion')
+    .optional(),
+  pasoNumero: z.number().int().min(1).max(24).nullable().optional(),
+  responsable: opcional(150),
+  retencion: opcional(150),
+  plantilla: z.string().max(60).optional(),
+  /** Datos para las marcas de la plantilla: representante, líder, municipio. */
+  datosPlantilla: z.record(z.string(), z.string().max(150)).optional(),
+  contenido: z.string().max(100_000).optional(),
+});
+export type DocumentoControladoInput = z.infer<typeof documentoControladoSchema>;
+
+export const borradorDocumentoSchema = z.object({
+  contenido: z.string().max(100_000).nullable().optional(),
+  resumenCambios: opcional(1000),
+});
+export type BorradorDocumentoInput = z.infer<typeof borradorDocumentoSchema>;
+
+export const aprobarDocumentoSchema = z.object({
+  password: z.string().min(1, 'Confirma con tu contraseña'),
+  vigenteDesde: fecha.optional(),
+});
+export type AprobarDocumentoInput = z.infer<typeof aprobarDocumentoSchema>;
+
+export const devolverDocumentoSchema = z.object({ nota: texto(5, 2000, 'Explica qué hay que corregir') });
+
+export const divulgacionSchema = z.object({
+  fecha,
+  medio: texto(3, 500, 'Indica cómo se divulgó (correo, cartelera, inducción…)'),
+});
+export type DivulgacionInput = z.infer<typeof divulgacionSchema>;

@@ -93,6 +93,11 @@ regla ya está implementada.
 | RN-60 | La encuesta de perfil sociodemográfico y de desplazamientos (paso 5) usa un cuestionario versionado del catálogo; cada encuesta conserva la versión con que se creó. Las preguntas condicionadas solo se piden si aplican. | Implementada |
 | RN-61 | La encuesta se responde por un enlace público (sin cuenta) o se registra en la plataforma. Siempre exige la autorización de tratamiento de datos (Ley 1581 de 2012). Si no es anónima, cada cédula responde una sola vez y la respuesta se asocia al conductor registrado; si es anónima, no se guarda nombre ni cédula. | Implementada |
 | RN-62 | Una encuesta cerrada o con fecha de cierre vencida no recibe respuestas; una encuesta con respuestas no se elimina. Los resultados muestran la distribución por pregunta, los hallazgos para el diagnóstico, la cobertura de conductores y quién falta por responder; el informe PDF puede quedar como evidencia del paso 5. | Implementada |
+| RN-63 | Cada documento controlado tiene un código único en la organización (sugerido como prefijo-sigla-consecutivo), tipo, paso del PESV, responsable y tiempo de retención. Su contenido se redacta en la plataforma, desde una plantilla o en blanco, o se adjunta como archivo. | Implementada |
+| RN-64 | Una versión pasa de borrador a revisión y se aprueba con la contraseña de quien tiene el permiso de aprobar (firma electrónica simple), o se devuelve con observaciones. Solo hay una versión en elaboración y una vigente por documento; al aprobar una nueva, la anterior queda obsoleta. Desde la versión 2 se exige describir los cambios. | Implementada |
+| RN-65 | El PDF del documento lleva el encabezado del sistema de gestión con su código, versión y fecha, y en el pie quién elaboró, revisó y aprobó, con la fecha de cada firma. Los borradores y las versiones obsoletas se marcan como no controlados. | Implementada |
+| RN-66 | Al aprobar un documento, su PDF (o el archivo adjunto) queda como evidencia aprobada del paso; si el paso no aplica al nivel de la organización, el documento se aprueba sin evidencia. Un documento que ya tuvo versiones aprobadas no se elimina. | Implementada |
+| RN-67 | Las versiones vigentes deben divulgarse (fecha y medio) y revisarse al menos una vez al año; la lista maestra señala las que no cumplen. | Implementada |
 
 ## Cuentas, suscripción y datos
 

@@ -6,6 +6,7 @@ import { ComiteModule } from './comite/comite.module.js';
 import { DesplazamientosModule } from './desplazamientos/desplazamientos.module.js';
 import { MantenimientoModule } from './mantenimiento/mantenimiento.module.js';
 import { IndicadoresModule } from './indicadores/indicadores.module.js';
+import { PerfilModule } from './perfil/perfil.module.js';
 import { MatrizModule } from './matriz/matriz.module.js';
 import { PlanTrabajoModule } from './plan-trabajo/plan-trabajo.module.js';
 import { CapacitacionModule } from './capacitacion/capacitacion.module.js';
@@ -53,6 +54,7 @@ import { TelematicaModule } from './telematica/telematica.module.js';
     SiniestrosModule,
     ComiteModule,
     IndicadoresModule,
+    PerfilModule,
     MatrizModule,
     PlanTrabajoModule,
     CapacitacionModule,

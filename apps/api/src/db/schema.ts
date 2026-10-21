@@ -867,3 +867,31 @@ export const riskMeasures = pgTable('risk_measures', {
   createdAt: creado(),
   updatedAt: actualizado(),
 });
+
+export const surveyCampaigns = pgTable('survey_campaigns', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  title: text('title').notNull(),
+  questionnaire: text('questionnaire').notNull().default('perfil-v1'),
+  token: text('token').notNull(),
+  status: text('status').notNull().default('abierta'),
+  anonymous: boolean('anonymous').notNull().default(false),
+  closesOn: date('closes_on'),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+});
+
+export const surveyResponses = pgTable('survey_responses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  campaignId: uuid('campaign_id').notNull(),
+  driverId: uuid('driver_id'),
+  documentNumber: text('document_number'),
+  fullName: text('full_name'),
+  answers: jsonb('answers').notNull().$type<Record<string, string | string[]>>(),
+  channel: text('channel').notNull(),
+  consentAt: timestamp('consent_at', { withTimezone: true }).notNull(),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }).notNull().defaultNow(),
+  submittedBy: uuid('submitted_by'),
+});

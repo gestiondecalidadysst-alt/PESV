@@ -31,6 +31,8 @@ const SiniestroDetalle = cargar(() => import('./pages/Siniestros'), 'SiniestroDe
 const Comite = cargar(() => import('./pages/Comite'), 'Comite');
 const ReunionComite = cargar(() => import('./pages/Comite'), 'ReunionComite');
 const Indicadores = cargar(() => import('./pages/Indicadores'), 'Indicadores');
+const PerfilConductores = cargar(() => import('./pages/PerfilConductores'), 'PerfilConductores');
+const Encuesta = cargar(() => import('./pages/Encuesta'), 'Encuesta');
 const MatrizRiesgos = cargar(() => import('./pages/MatrizRiesgos'), 'MatrizRiesgos');
 const PlanTrabajo = cargar(() => import('./pages/PlanTrabajo'), 'PlanTrabajo');
 const Capacitacion = cargar(() => import('./pages/Capacitacion'), 'Capacitacion');
@@ -85,6 +87,8 @@ const router = createBrowserRouter([
   },
   // Enlace de recuperación o de invitación: funciona con o sin sesión iniciada.
   { path: 'restablecer', element: conCarga(<Restablecer />), errorElement: <PantallaError /> },
+  // Encuesta de perfil por enlace público: no requiere cuenta.
+  { path: 'encuesta/:token', element: conCarga(<Encuesta />), errorElement: <PantallaError /> },
   {
     element: <RequiereSesion />,
     errorElement: <PantallaError />,
@@ -109,6 +113,7 @@ const router = createBrowserRouter([
           { path: 'plan-trabajo', element: conCarga(<PlanTrabajo />) },
           { path: 'capacitacion', element: conCarga(<Capacitacion />) },
           { path: 'indicadores', element: conCarga(<Indicadores />) },
+          { path: 'perfil-conductores', element: conCarga(<PerfilConductores />) },
           { path: 'planificacion', element: <Navigate to="/indicadores?vista=metas" replace /> },
           { path: 'acciones', element: conCarga(<Acciones />) },
           { path: 'vigia', element: conCarga(<Vigia />) },

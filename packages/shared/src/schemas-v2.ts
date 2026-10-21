@@ -275,3 +275,21 @@ export const metaPesvSchema = z.object({
   sentido: sentido.default('menor_o_igual'),
 }).refine((m) => !!m.indicadorId || !!m.indicador, { message: 'Elige un indicador o escribe cómo se mide', path: ['indicador'] });
 export type MetaPesvInput = z.infer<typeof metaPesvSchema>;
+
+// Perfil de los colaboradores (paso 5) ----------------------------------------------
+
+export const campanaEncuestaSchema = z.object({
+  titulo: texto(3, 200, 'Ponle un título a la encuesta'),
+  cierraEl: fecha.nullable().optional(),
+  anonima: z.boolean().default(false),
+});
+export type CampanaEncuestaInput = z.infer<typeof campanaEncuestaSchema>;
+
+export const respuestaEncuestaSchema = z.object({
+  documento: z.string().trim().regex(/^\d{5,12}$/, 'Escribe la cédula sin puntos').optional(),
+  nombre: z.string().trim().min(3, 'Escribe tu nombre').max(150).optional(),
+  conductorId: z.string().uuid().nullable().optional(),
+  consentimiento: z.literal(true, { error: 'Debes autorizar el tratamiento de los datos para enviar la encuesta' }),
+  respuestas: z.record(z.string(), z.union([z.string().max(500), z.array(z.string().max(60)).max(20)])),
+});
+export type RespuestaEncuestaInput = z.infer<typeof respuestaEncuestaSchema>;

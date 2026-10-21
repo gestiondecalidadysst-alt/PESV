@@ -90,6 +90,9 @@ regla ya está implementada.
 | RN-57 | Un resultado cumple si alcanza la meta según su sentido, queda en riesgo entre la meta y el umbral de alerta, y no cumple más allá. Un periodo en curso se mide hasta hoy y se marca como parcial; el último resultado del indicador es el del último periodo cerrado. | Implementada |
 | RN-58 | Al registrar el análisis de un periodo, el valor calculado queda fijo aunque después cambien los datos. Un periodo cerrado que no cumple queda "por analizar" hasta que tenga análisis o una acción de mejora, que se registra en el plan de acción con responsable y fecha. | Implementada |
 | RN-59 | Una meta del PESV (paso 7) puede conectarse a un indicador: su resultado es el acumulado del año si el indicador es automático, o la suma (números) o el último valor (porcentajes y tasas) si es manual. | Implementada |
+| RN-60 | La encuesta de perfil sociodemográfico y de desplazamientos (paso 5) usa un cuestionario versionado del catálogo; cada encuesta conserva la versión con que se creó. Las preguntas condicionadas solo se piden si aplican. | Implementada |
+| RN-61 | La encuesta se responde por un enlace público (sin cuenta) o se registra en la plataforma. Siempre exige la autorización de tratamiento de datos (Ley 1581 de 2012). Si no es anónima, cada cédula responde una sola vez y la respuesta se asocia al conductor registrado; si es anónima, no se guarda nombre ni cédula. | Implementada |
+| RN-62 | Una encuesta cerrada o con fecha de cierre vencida no recibe respuestas; una encuesta con respuestas no se elimina. Los resultados muestran la distribución por pregunta, los hallazgos para el diagnóstico, la cobertura de conductores y quién falta por responder; el informe PDF puede quedar como evidencia del paso 5. | Implementada |
 
 ## Cuentas, suscripción y datos
 

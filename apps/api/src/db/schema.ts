@@ -347,6 +347,7 @@ export const actions = pgTable('actions', {
   closedBy: uuid('closed_by'),
   createdBy: uuid('created_by'),
   createdAt: creado(),
+  stepNumber: smallint('step_number'),
 });
 
 export const crashes = pgTable('crashes', {
@@ -946,3 +947,20 @@ export const documentVersions = pgTable(
   },
   (t) => [unique().on(t.documentId, t.version)],
 );
+
+export const stepFindings = pgTable('step_findings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  stepNumber: smallint('step_number').notNull(),
+  kind: text('kind').notNull(),
+  origin: text('origin').notNull().default('autoevaluacion'),
+  description: text('description').notNull(),
+  cause: text('cause'),
+  detectedOn: date('detected_on').notNull(),
+  status: text('status').notNull().default('abierto'),
+  closureNote: text('closure_note'),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  closedBy: uuid('closed_by'),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+});

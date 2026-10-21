@@ -24,7 +24,23 @@ e integración con n8n.
 - **Comité de seguridad vial**: agenda sugerida con los pendientes, modo reunión con asistencia, notas por punto que
   se guardan solas, decisiones con votación y quórum, compromisos, borrador del acta con IA, PDF como evidencia del
   paso 2 y firma de cada asistente con su contraseña.
-- **Planificación**: matriz de riesgos 5×5 con riesgo residual, metas, plan anual y capacitaciones con asistencia.
+- **Formato del sistema de gestión**: logo de la empresa y encabezado/pie controlados (código, versión, fecha,
+  elaboró/revisó/aprobó, página X de Y) en todos los PDF y Excel que genera la plataforma.
+- **Matriz de riesgos viales** (paso 6) con GTC 45 adaptada o matriz 5×5 a elección de cada empresa, mapa de calor,
+  medidas por jerarquía de controles que pasan al plan de trabajo, en PDF y Excel.
+- **Plan anual de trabajo** (paso 9) con cronograma mensual programado/ejecutado, metas, PHVA, presupuesto,
+  seguimiento con soportes y gráfica de cumplimiento.
+- **Plan anual de formación** (paso 10) con convocatoria, asistencia, notas, eficacia, cobertura por conductor y
+  lista de asistencia en PDF para firmar.
+- **Indicadores con ficha técnica** (paso 20) que se miden solos con los datos de la plataforma, gráficas contra la
+  meta, análisis por periodo y acción de mejora ante incumplimiento; metas del PESV (paso 7) conectadas.
+- **Perfil de los colaboradores** (paso 5): encuesta por enlace o código QR para el celular, con resultados y
+  hallazgos para el diagnóstico.
+- **Documentos controlados**: política y procedimientos con plantillas, revisión, aprobación con firma
+  electrónica, versiones, divulgación y lista maestra (pasos 3 y 19).
+- **Pasos conectados**: un paso no se cierra sin sus prerrequisitos ni con no conformidades abiertas; cada paso
+  muestra sus herramientas y sus hallazgos, que se tratan en el **plan de acción unificado** (paso 23); el inicio
+  muestra el avance por fase, los siguientes pasos y lo que requiere atención.
 - **Desplazamientos**: rutas con límite de velocidad y viajes que no se asignan con documentos vencidos.
 - **VIGIA 2**: calendario de plazos, indicadores de los formularios A–D, datos faltantes y archivo Excel para cargar.
 - **Auditorías** (pasos 22 y 23): hallazgos por paso y cláusula ISO, acciones correctivas y verificación de eficacia;
@@ -118,26 +134,33 @@ Las pruebas de la API necesitan una base migrada y sembrada, indicada con `DATAB
 ## API
 
 Rutas públicas: `/api/health`, `/api/catalog/*`, `/api/classification/preview`, `/api/auth/registro`,
-`/api/auth/ingresar`. El resto exige sesión (cookie `pesv_sesion`, httpOnly) o un token de API (`Bearer pesv_…`),
+`/api/auth/ingresar` y el enlace de la encuesta `/api/encuesta/:token`. El resto exige sesión (cookie `pesv_sesion`, httpOnly) o un token de API (`Bearer pesv_…`),
 y las rutas `/api/org/*` trabajan sobre la organización del encabezado `x-organization-id`, verificando la
 membresía y el permiso del rol.
 
 | Módulo | Rutas principales |
 | --- | --- |
 | Autenticación | `POST /auth/registro`, `POST /auth/ingresar`, `POST /auth/salir`, `GET /auth/yo`, `POST /auth/recuperar`, `GET /auth/enlace`, `POST /auth/restablecer`, `POST /auth/cambiar-clave`, `POST /auth/cerrar-sesiones` |
-| Organización | `GET /org`, `GET /org/pasos`, `PATCH /org/pasos/:n`, `GET/POST /org/reclasificacion`, `POST /organizations` |
+| Organización | `GET /org`, `GET /org/pasos`, `PATCH /org/pasos/:n` (exige prerrequisitos), `GET/POST /org/reclasificacion`, `POST /organizations` |
 | Miembros | `GET/POST /org/miembros`, `DELETE /org/miembros/:id` |
 | Evidencias | `GET/POST /org/evidencias`, `POST /org/evidencias/:id/decision`, `GET /org/evidencias/:id/archivo` |
 | Flota | `GET/POST/PATCH /org/vehiculos`, `GET/POST/PATCH /org/conductores`, `GET /org/alertas` |
 | Preoperacional | `GET /org/inspecciones/plantilla/:vehiculo`, `POST /org/inspecciones`, `GET /org/inspecciones` |
-| Tablero | `GET /org/tablero` |
+| Tablero | `GET /org/tablero`, `GET /org/tablero/gestion` |
 | IA | `GET/PUT /org/ia/config`, `POST /org/ia/probar`, `POST /org/ia/copiloto`, `POST /org/ia/redactar`, `POST /org/ia/diagnostico`, `POST /org/ia/lector` |
 | Integraciones | `/org/integraciones/webhooks`, `/org/integraciones/tokens`, `GET /org/integraciones/entregas` |
 | Mantenimiento | `/org/mantenimiento/planes`, `/org/mantenimiento/ordenes`, `POST /org/mantenimiento/ordenes/:id/cerrar` |
 | Siniestros | `GET/POST /org/siniestros`, `PATCH /org/siniestros/:id/investigacion`, `POST /org/siniestros/:id/acciones`, `POST /org/siniestros/:id/borrador-ia` |
 | Comité | `/org/comite/miembros`, `GET /org/comite/agenda-sugerida`, `/org/comite/reuniones/:id` (`iniciar`, `puntos`, `asistencia`, `llegada`, `decisiones`, `compromisos`, `transcripcion`, `borrador-acta`, `cerrar`, `firmar`, `acta`) |
-| Acciones | `GET/POST /org/acciones`, `POST /org/acciones/:id/cerrar` |
-| Planificación | `/org/riesgos`, `/org/metas`, `/org/plan`, `/org/capacitaciones`, `PUT /org/capacitaciones/:id/asistentes` |
+| Plan de acción | `GET/POST /org/acciones`, `GET /org/acciones/plan`, `POST /org/acciones/:id/cerrar`, `GET /org/acciones/exportar`, `POST /org/acciones/evidencia` |
+| Hallazgos de pasos | `GET/POST /org/pasos/:n/hallazgos`, `GET /org/hallazgos`, `POST /org/hallazgos/:id/acciones`, `POST /org/hallazgos/:id/cerrar` |
+| Formato | `GET/PUT /org/formato`, `PUT /org/formato/documentos`, `GET /org/formato/vista-previa`, `GET/POST/DELETE /org/logo` |
+| Matriz de riesgos | `GET /org/matriz`, `PUT /org/matriz/metodologia`, `/org/matriz/riesgos/:id`, `/org/matriz/riesgos/:id/medidas`, `/org/matriz/medidas/:id` (`plan`), `GET /org/matriz/exportar`, `POST /org/matriz/evidencia` |
+| Plan de trabajo | `GET/POST /org/plan-trabajo`, `PUT/DELETE /org/plan-trabajo/:id`, `POST/DELETE /org/plan-trabajo/:id/seguimiento[/:mes]`, `GET /org/plan-trabajo/exportar`, `POST /org/plan-trabajo/evidencia` |
+| Plan de formación | `GET/POST /org/capacitacion`, `PUT/DELETE /org/capacitacion/:id`, `PUT …/asistencia`, `POST …/ejecutar`, `PUT …/eficacia`, `GET …/lista-asistencia`, `GET /org/capacitacion/conductores`, `GET /org/capacitacion/exportar` |
+| Indicadores y metas | `GET/POST /org/indicadores`, `POST /org/indicadores/plantillas`, `PUT/DELETE /org/indicadores/:id`, `PUT/DELETE …/resultados/:periodo`, `POST …/resultados/:periodo/accion`, `GET …/ficha`, `GET /org/indicadores/exportar`, `GET/POST/PATCH/DELETE /org/metas` |
+| Perfil de colaboradores | `GET/POST /org/perfil-conductores`, `GET /org/perfil-conductores/:id`, `POST …/cerrar`, `POST …/reabrir`, `POST …/respuestas`, `GET …/exportar`; público: `GET/POST /encuesta/:token` |
+| Documentos | `GET/POST /org/documentos`, `GET/PUT/DELETE /org/documentos/:id`, `PUT …/borrador`, `POST …/borrador/archivo`, `POST …/nueva-version`, `…/enviar`, `…/revisar`, `…/devolver`, `…/aprobar`, `…/divulgacion`, `GET …/versiones/:v/pdf`, `GET /org/documentos/lista-maestra` |
 | Desplazamientos | `/org/rutas`, `GET/POST /org/viajes`, `POST /org/viajes/:id/terminar` |
 | VIGIA 2 | `GET /org/vigia/calendario`, `GET /org/vigia/:formulario/:periodo`, `POST …/generar`, `POST …/enviado`, `GET …/archivo` |
 | Auditorías | `GET/POST /org/auditorias`, `GET/PATCH /org/auditorias/:id`, `POST …/hallazgos`, `POST …/hallazgos/importar`, `POST …/cerrar`, `POST /org/auditorias/simulacro`, `POST /org/auditorias/hallazgos/:id/acciones`, `POST /org/auditorias/hallazgos/:id/cerrar` |
@@ -171,6 +194,8 @@ cualquier escritura).
 | 1 · MVP | Autenticación y roles, evidencias por paso, flota y conductores, preoperacional sin conexión, tablero, copiloto e IA elegida por el cliente, n8n | Completa |
 | 2 · Operación | Mantenimiento, siniestros, comité con acta en vivo y firmas, planificación, desplazamientos, VIGIA 2 | Completa |
 | 3 · Escala | Auditorías y auditor simulado, puntaje de riesgo, telemática GPS, ISO 39001, adopción voluntaria, planes y suscripciones | Completa |
+| 4 · Producción | Recuperación de contraseña, correo, registro de errores, despliegue en VPS con respaldos | Completa |
+| 5 · Versión 2 | Formato SG, matriz GTC 45/5×5, plan de trabajo, plan de formación, indicadores y metas, perfil de colaboradores, documentos controlados, pasos conectados y plan de acción | Completa |
 
 Pendiente, fuera del alcance actual:
 

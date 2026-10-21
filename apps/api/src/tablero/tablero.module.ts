@@ -1,6 +1,12 @@
 import { Controller, Get, Injectable, Module } from '@nestjs/common';
 import { and, count, eq, gte, lt } from 'drizzle-orm';
-import { cumplimientoIso } from '@pesv/shared';
+import { cumplimientoIso, FASES_PHVA, PASOS_PESV, pasosQueDependenDe, siguientesPasos } from '@pesv/shared';
+import { AccionesModule, AccionesService } from '../acciones/acciones.module.js';
+import { CapacitacionModule, CapacitacionService } from '../capacitacion/capacitacion.module.js';
+import { DocumentosControladosModule, DocumentosControladosService } from '../documentos-controlados/documentos-controlados.module.js';
+import { IndicadoresModule, IndicadoresService } from '../indicadores/indicadores.module.js';
+import { MatrizModule, MatrizService } from '../matriz/matriz.module.js';
+import { PlanTrabajoModule, PlanTrabajoService } from '../plan-trabajo/plan-trabajo.module.js';
 import { OrgActual, Permiso, RequiereFuncion, type OrgSesion } from '../auth/decorators.js';
 import { DatabaseService } from '../db/database.service.js';
 import { evidences, inspections } from '../db/schema.js';
@@ -20,7 +26,57 @@ export class TableroService {
     private readonly database: DatabaseService,
     private readonly organizaciones: OrganizationsService,
     private readonly flota: FlotaService,
+    private readonly plan: PlanTrabajoService,
+    private readonly formacion: CapacitacionService,
+    private readonly indicadores: IndicadoresService,
+    private readonly acciones: AccionesService,
+    private readonly matriz: MatrizService,
+    private readonly documentos: DocumentosControladosService,
   ) {}
+
+  /**
+   * Tablero de gestión: avance por fase, pasos que conviene trabajar, y el estado de los planes,
+   * indicadores, acciones, riesgos y documentos (lo que conecta los pasos entre sí).
+   */
+  async gestion(orgId: string) {
+    const anio = new Date().getFullYear();
+    const [pasos, plan, formacion, indicadores, acciones, matriz, documentos] = await Promise.all([
+      this.organizaciones.pasos(orgId),
+      this.plan.consultar(orgId, anio),
+      this.formacion.consultar(orgId, anio),
+      this.indicadores.consultar(orgId, anio),
+      this.acciones.plan(orgId),
+      this.matriz.consultar(orgId),
+      this.documentos.listar(orgId),
+    ]);
+    const estados = Object.fromEntries(pasos.map((p) => [p.numero, p.estado]));
+    return {
+      anio,
+      porFase: FASES_PHVA.map((f) => {
+        const de = pasos.filter((p) => p.fase === f.id && p.estado !== 'no_aplica');
+        return { fase: f.id, aplicables: de.length, hechos: de.filter((p) => p.estado === 'hecho').length, enCurso: de.filter((p) => p.estado === 'en_curso').length };
+      }),
+      siguientes: siguientesPasos(estados, pasosQueDependenDe)
+        .slice(0, 5)
+        .map((n) => {
+          const p = pasos.find((x) => x.numero === n)!;
+          return { numero: n, nombre: PASOS_PESV.find((x) => x.numero === n)!.nombre, estado: p.estado, habilita: p.habilita.length, evidencias: p.evidencias.aprobadas };
+        }),
+      bloqueados: pasos.filter((p) => p.estado !== 'no_aplica' && p.estado !== 'hecho' && p.prerrequisitosPendientes.length > 0).length,
+      planTrabajo: { cumplimiento: plan.resumen.cumplimiento, ejecucion: plan.resumen.ejecucion, atrasadas: plan.resumen.atrasadas, actividades: plan.resumen.actividades, porMes: plan.resumen.porMes },
+      formacion: { cumplimiento: formacion.indicadores.cumplimiento, cobertura: formacion.indicadores.cobertura, eficacia: formacion.indicadores.eficacia },
+      indicadores: indicadores.resumen,
+      acciones: { abiertas: acciones.resumen.abiertas, vencidas: acciones.resumen.vencidas, porVencer: acciones.resumen.porVencer, cumplimientoATiempo: acciones.resumen.cumplimientoATiempo, hallazgosAbiertos: pasos.reduce((s, p) => s + p.hallazgosAbiertos, 0) },
+      riesgos: {
+        total: matriz.resumen.total,
+        criticos: matriz.resumen.criticos,
+        criticosSinMedida: matriz.riesgos.filter((r) => r.estado !== 'cerrado' && r.inherente?.critico && r.medidas.length === 0).length,
+        porNivel: matriz.resumen.porNivel,
+        metodologia: matriz.metodologia,
+      },
+      documentos: { tienePolitica: documentos.tienePolitica, vigentes: documentos.resumen.vigentes, enRevision: documentos.resumen.enRevision, porRevisar: documentos.resumen.revisionVencida },
+    };
+  }
 
   async iso(orgId: string) {
     const pasos = await this.organizaciones.pasos(orgId);
@@ -82,6 +138,12 @@ export class TableroController {
     return this.service.resumen(org.id);
   }
 
+  @Get('gestion')
+  @Permiso('ver')
+  gestion(@OrgActual() org: OrgSesion) {
+    return this.service.gestion(org.id);
+  }
+
   /** Cumplimiento de ISO 39001 por cláusula, derivado del estado de los pasos (RN-07). */
   @Get('iso')
   @Permiso('ver')
@@ -91,5 +153,5 @@ export class TableroController {
   }
 }
 
-@Module({ imports: [OrganizationsModule, FlotaModule], controllers: [TableroController], providers: [TableroService], exports: [TableroService] })
+@Module({ imports: [OrganizationsModule, FlotaModule, PlanTrabajoModule, CapacitacionModule, IndicadoresModule, AccionesModule, MatrizModule, DocumentosControladosModule], controllers: [TableroController], providers: [TableroService], exports: [TableroService] })
 export class TableroModule {}

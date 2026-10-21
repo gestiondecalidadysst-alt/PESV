@@ -9,7 +9,7 @@ import { api, urlApi } from '../lib/api';
 import { useAccion, useConsulta } from '../lib/consultas';
 import { useSesion } from '../lib/sesion';
 import { ListaAcciones, type Accion } from './Acciones';
-import { NuevaAccion } from './Siniestros';
+import { NuevaAccion } from '../components/NuevaAccion';
 
 type RolComite = 'presidente' | 'secretario' | 'lider_pesv' | 'integrante';
 const ROL_COMITE: Record<RolComite, string> = { presidente: 'Presidente', secretario: 'Secretario', lider_pesv: 'Líder PESV', integrante: 'Integrante' };

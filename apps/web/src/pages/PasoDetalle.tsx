@@ -20,6 +20,7 @@ import { useAccion, useConsulta } from '../lib/consultas';
 import { useSesion } from '../lib/sesion';
 import type { EstadoDePaso, Evidencia } from '../lib/tipos';
 import { TEXTO_ESTADO, TONO_ESTADO } from './Pasos';
+import { ConexionPaso, HallazgosPaso } from '../components/ConexionPaso';
 
 const titulosIso = new Map(CLAUSULAS_ISO_39001.map((c) => [c.codigo, c.titulo]));
 const TONO_EVIDENCIA = { borrador: 'aviso', aprobada: 'exito', rechazada: 'peligro' } as const;
@@ -55,11 +56,18 @@ export function PasoDetalle() {
         <>
           <Tarjeta>
             <Subtitulo>Estado del paso</Subtitulo>
-            <p className="text-sm text-gris">
-              {paso.evidencias.aprobadas
-                ? `Tiene ${paso.evidencias.aprobadas} evidencia(s) aprobada(s). Puedes marcarlo como hecho.`
-                : 'Necesita al menos una evidencia aprobada para marcarse como hecho.'}
-            </p>
+            <ul className="flex flex-col gap-1 text-sm">
+              <li className={paso.evidencias.aprobadas ? 'text-via' : 'text-gris'}>
+                {paso.evidencias.aprobadas ? '✓' : '○'} {paso.evidencias.aprobadas ? `${paso.evidencias.aprobadas} evidencia(s) aprobada(s)` : 'Necesita al menos una evidencia aprobada'}
+              </li>
+              <li className={paso.prerrequisitosPendientes.length ? 'text-gris' : 'text-via'}>
+                {paso.prerrequisitosPendientes.length ? '○' : '✓'}{' '}
+                {paso.prerrequisitosPendientes.length ? `Primero deben estar hechos los pasos ${paso.prerrequisitosPendientes.join(', ')}` : 'Prerrequisitos cumplidos'}
+              </li>
+              <li className={paso.noConformidadesAbiertas ? 'text-alerta' : 'text-via'}>
+                {paso.noConformidadesAbiertas ? '○' : '✓'} {paso.noConformidadesAbiertas ? `${paso.noConformidadesAbiertas} no conformidad(es) abierta(s): trátalas abajo` : 'Sin no conformidades abiertas'}
+              </li>
+            </ul>
             {puede('gestionar_pesv') && (
               <div className="flex flex-wrap gap-2">
                 {(['pendiente', 'en_curso', 'hecho'] as const).map((e) => (
@@ -67,7 +75,7 @@ export function PasoDetalle() {
                     key={e}
                     variante={paso.estado === e ? 'principal' : 'secundario'}
                     aria-pressed={paso.estado === e}
-                    disabled={cambiarEstado.isPending || (e === 'hecho' && !paso.evidencias.aprobadas)}
+                    disabled={cambiarEstado.isPending || (e === 'hecho' && (!paso.evidencias.aprobadas || paso.prerrequisitosPendientes.length > 0 || paso.noConformidadesAbiertas > 0))}
                     onClick={() => cambiarEstado.mutate(e)}
                   >
                     {TEXTO_ESTADO[e]}
@@ -85,6 +93,9 @@ export function PasoDetalle() {
               </ul>
             </div>
           </Tarjeta>
+
+          <ConexionPaso paso={paso} todos={pasos.data ?? []} />
+          <HallazgosPaso numero={numero} />
 
           <Tarjeta>
             <Subtitulo>Evidencias</Subtitulo>

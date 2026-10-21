@@ -24,3 +24,4 @@ export * from './catalog/formacion';
 export * from './catalog/indicadores';
 export * from './catalog/perfil-conductores';
 export * from './catalog/plantillas-documentos';
+export * from './catalog/plan-accion';

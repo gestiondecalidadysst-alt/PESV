@@ -98,6 +98,10 @@ regla ya está implementada.
 | RN-65 | El PDF del documento lleva el encabezado del sistema de gestión con su código, versión y fecha, y en el pie quién elaboró, revisó y aprobó, con la fecha de cada firma. Los borradores y las versiones obsoletas se marcan como no controlados. | Implementada |
 | RN-66 | Al aprobar un documento, su PDF (o el archivo adjunto) queda como evidencia aprobada del paso; si el paso no aplica al nivel de la organización, el documento se aprueba sin evidencia. Un documento que ya tuvo versiones aprobadas no se elimina. | Implementada |
 | RN-67 | Las versiones vigentes deben divulgarse (fecha y medio) y revisarse al menos una vez al año; la lista maestra señala las que no cumplen. | Implementada |
+| RN-68 | Un paso solo se marca «Hecho» si sus prerrequisitos (los que aplican al nivel) ya están hechos, si tiene al menos una evidencia aprobada y si no tiene no conformidades abiertas. Los prerrequisitos son datos del catálogo (`PRERREQUISITOS_PASO`). | Implementada |
+| RN-69 | Los hallazgos de un paso (no conformidad, observación u oportunidad de mejora) se tratan con acciones del plan de acción. Una no conformidad reabre el paso si estaba hecho y se trata con una acción correctiva; el hallazgo se cierra solo cuando tiene acciones, todas cerradas, y se registra la verificación. | Implementada |
+| RN-70 | El plan de acción reúne las acciones de todos los orígenes (hallazgos de pasos, comité, siniestros, auditorías, indicadores, matriz y plan de mejora), cada una con su paso del PESV; mide las vencidas, las por vencer y el porcentaje cerrado a tiempo. | Implementada |
+| RN-71 | Los siguientes pasos recomendados son los que aplican, no están hechos y tienen sus prerrequisitos cerrados, primero los que habilitan más pasos. | Implementada |
 
 ## Cuentas, suscripción y datos
 

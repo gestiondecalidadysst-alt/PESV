@@ -9,7 +9,7 @@ import { api } from '../lib/api';
 import { useAccion, useConsulta } from '../lib/consultas';
 import { useSesion } from '../lib/sesion';
 import { ListaAcciones, type Accion } from './Acciones';
-import { NuevaAccion } from './Siniestros';
+import { NuevaAccion } from '../components/NuevaAccion';
 
 type EstadoAuditoria = 'planeada' | 'en_curso' | 'cerrada';
 interface Auditoria {

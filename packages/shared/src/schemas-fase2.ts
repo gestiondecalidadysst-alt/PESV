@@ -60,8 +60,9 @@ export const accionSchema = z.object({
   responsable: texto(3, 150, 'Indica quién es responsable'),
   responsableUsuarioId: uuid.optional().nullable(),
   venceEl: fecha,
-  origen: z.enum(['comite', 'siniestro', 'auditoria', 'hallazgo', 'manual']).default('manual'),
+  origen: z.enum(['comite', 'siniestro', 'auditoria', 'hallazgo', 'indicador', 'riesgo', 'capacitacion', 'paso', 'manual']).default('manual'),
   origenId: uuid.optional().nullable(),
+  pasoNumero: z.number().int().min(1).max(24).nullable().optional(),
 });
 export type AccionInput = z.infer<typeof accionSchema>;
 

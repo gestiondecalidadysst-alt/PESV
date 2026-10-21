@@ -36,7 +36,7 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/plan-trabajo', nombre: 'Plan de trabajo', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/capacitacion', nombre: 'Plan de formación', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/indicadores', nombre: 'Indicadores y metas', permiso: 'ver', grupo: 'Gestión' },
-  { ruta: '/acciones', nombre: 'Acciones y compromisos', permiso: 'ver', grupo: 'Gestión' },
+  { ruta: '/acciones', nombre: 'Plan de acción', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/flota', nombre: 'Flota y conductores', permiso: 'ver', grupo: 'Operación' },
   { ruta: '/preoperacional', nombre: 'Preoperacional', permiso: 'inspeccionar', grupo: 'Operación' },
   { ruta: '/mantenimiento', nombre: 'Mantenimiento', permiso: 'ver', grupo: 'Operación' },

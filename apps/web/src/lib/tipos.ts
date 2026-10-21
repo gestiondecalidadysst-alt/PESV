@@ -41,6 +41,13 @@ export interface EstadoDePaso {
   actualizado: string | null;
   clausulasIso: string[];
   evidencias: { aprobadas: number; enRevision: number; rechazadas: number };
+  prerrequisitos: { numero: number; estado: EstadoPaso }[];
+  prerrequisitosPendientes: number[];
+  habilita: number[];
+  hallazgosAbiertos: number;
+  noConformidadesAbiertas: number;
+  accionesAbiertas: number;
+  accionesVencidas: number;
 }
 
 export interface Evidencia {

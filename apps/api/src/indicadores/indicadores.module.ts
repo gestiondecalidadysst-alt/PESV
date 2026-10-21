@@ -336,6 +336,7 @@ export class IndicadoresService {
           description: `${input.descripcion} (Indicador «${i.name}», periodo ${p.etiqueta} ${periodo.slice(0, 4)})`,
           responsibleName: input.responsable,
           dueOn: input.fechaLimite,
+          stepNumber: i.stepNumber,
           createdBy: actorId,
         })
         .returning({ id: actions.id });

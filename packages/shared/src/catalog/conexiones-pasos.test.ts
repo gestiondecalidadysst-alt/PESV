@@ -27,3 +27,15 @@ describe('conexiones entre pasos', () => {
     expect(pasosQueDependenDe(6)).toEqual(expect.arrayContaining([7, 8, 10, 12]));
   });
 });
+
+describe('siguientes pasos', () => {
+  it('propone los pasos con prerrequisitos cerrados, primero los que más habilitan', async () => {
+    const { siguientesPasos } = await import('./plan-accion');
+    const { pasosQueDependenDe } = await import('./conexiones-pasos');
+    const estados: Record<number, string> = { 1: 'hecho', 2: 'pendiente', 3: 'en_curso', 4: 'pendiente', 5: 'pendiente', 6: 'pendiente', 19: 'no_aplica' };
+    const s = siguientesPasos(estados, pasosQueDependenDe);
+    expect(s).toEqual([3, 5, 2]);
+    expect(s).not.toContain(4);
+    expect(s).not.toContain(6);
+  });
+});

@@ -645,5 +645,5 @@ export class DocumentosControladosController {
   }
 }
 
-@Module({ imports: [EvidenciasModule], controllers: [DocumentosControladosController], providers: [DocumentosControladosService] })
+@Module({ imports: [EvidenciasModule], controllers: [DocumentosControladosController], providers: [DocumentosControladosService], exports: [DocumentosControladosService] })
 export class DocumentosControladosModule {}

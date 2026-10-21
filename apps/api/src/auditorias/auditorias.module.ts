@@ -194,7 +194,7 @@ export class AuditoriasService {
       const h = await this.hallazgo(tx, hallazgoId);
       if (h.status === 'cerrado') throw new BadRequestException('El hallazgo ya se cerró');
       const tipo = exigeAccionCorrectiva(h.kind as HallazgoInput['tipo']) ? 'correctiva' : input.tipo;
-      return aAccion(await crearAccion(tx, orgId, { ...input, tipo, origen: 'hallazgo', origenId: h.id }, actorId));
+      return aAccion(await crearAccion(tx, orgId, { ...input, tipo, origen: 'hallazgo', origenId: h.id, pasoNumero: h.stepNumber ?? 22 }, actorId));
     });
   }
 

@@ -11,6 +11,7 @@ import {
   NIVELES_EXPOSICION,
 } from './catalog/matriz-riesgos';
 import { IDS_FASE_PHVA } from './catalog/plan-trabajo';
+import { IDS_FUENTE_HALLAZGO, IDS_TIPO_HALLAZGO_PASO } from './catalog/plan-accion';
 import { CALCULOS_INDICADOR, IDS_FRECUENCIA, IDS_TIPO_INDICADOR, IDS_UNIDAD_INDICADOR } from './catalog/indicadores';
 import { IDS_FACILITADOR, IDS_METODO_EVALUACION, IDS_MODALIDAD_FORMACION, IDS_PUBLICO_FORMACION, IDS_TEMA_FORMACION, IDS_TIPO_FORMACION } from './catalog/formacion';
 
@@ -334,3 +335,16 @@ export const divulgacionSchema = z.object({
   medio: texto(3, 500, 'Indica cómo se divulgó (correo, cartelera, inducción…)'),
 });
 export type DivulgacionInput = z.infer<typeof divulgacionSchema>;
+
+// Hallazgos de los pasos y plan de acción (paso 23) --------------------------------------
+
+export const hallazgoPasoSchema = z.object({
+  tipo: z.enum(IDS_TIPO_HALLAZGO_PASO),
+  fuente: z.enum(IDS_FUENTE_HALLAZGO).default('autoevaluacion'),
+  descripcion: texto(5, 2000, 'Describe el hallazgo'),
+  causa: opcional(2000),
+  detectadoEl: fecha,
+});
+export type HallazgoPasoInput = z.infer<typeof hallazgoPasoSchema>;
+
+export const cerrarHallazgoPasoSchema = z.object({ nota: texto(5, 2000, 'Explica cómo se verificó que el hallazgo quedó resuelto') });

@@ -1,4 +1,4 @@
-import { FASE_LABEL, type EstadoPaso } from '@pesv/shared';
+import { FASE_LABEL, PASOS_PESV, pasosQueDependenDe, siguientesPasos, type EstadoPaso } from '@pesv/shared';
 import { Link } from 'react-router';
 import { CuadriculaPasos } from '../components/CuadriculaPasos';
 import { Aviso, Cargando, Encabezado, Insignia, Pagina, Tabla, Tarjeta, td, th } from '../components/ui';
@@ -20,6 +20,7 @@ export function Pasos() {
   if (pasos.error) return <Aviso error={pasos.error} />;
   const lista = pasos.data!;
   const estados = Object.fromEntries(lista.map((p) => [p.numero, p.estado]));
+  const siguientes = siguientesPasos(estados, pasosQueDependenDe).slice(0, 6);
   const resumen = detalle.data?.resumen;
 
   return (
@@ -29,7 +30,7 @@ export function Pasos() {
         descripcion={
           <>
             {resumen ? `${resumen.hechos} de ${resumen.aplicables} pasos aplicables completos. ` : ''}
-            Un paso queda hecho cuando tiene al menos una evidencia aprobada.{' '}
+            Un paso queda hecho cuando tiene al menos una evidencia aprobada, sus prerrequisitos están cerrados y no tiene no conformidades abiertas.{' '}
             <Link to="/norma" className="font-semibold text-[#1d4e89] underline-offset-4 hover:underline">Ver la norma y su relación con ISO 39001</Link>
           </>
         }
@@ -37,6 +38,21 @@ export function Pasos() {
       <Tarjeta>
         <CuadriculaPasos estados={estados} enlace={(n) => `/pasos/${n}`} />
       </Tarjeta>
+      {siguientes.length > 0 && (
+        <Tarjeta>
+          <p className="font-bold text-noche">Siguientes pasos recomendados</p>
+          <p className="-mt-2 text-sm text-gris">Sus prerrequisitos ya están cerrados. Primero los que habilitan más pasos.</p>
+          <ol className="flex flex-wrap gap-2">
+            {siguientes.map((n) => (
+              <li key={n}>
+                <Link to={`/pasos/${n}`} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-papel px-3 text-sm font-semibold text-noche ring-1 ring-linea hover:ring-noche/40">
+                  <span className="text-[#1d4e89]">{n}</span> {PASOS_PESV.find((p) => p.numero === n)?.nombre}
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </Tarjeta>
+      )}
       <Tabla>
         <thead>
           <tr>
@@ -44,6 +60,8 @@ export function Pasos() {
             <th className={th}>Fase</th>
             <th className={th}>Estado</th>
             <th className={th}>Evidencias</th>
+            <th className={th}>Requiere</th>
+            <th className={th}>Hallazgos y acciones</th>
             <th className={th}>ISO 39001</th>
           </tr>
         </thead>
@@ -65,6 +83,18 @@ export function Pasos() {
                 {p.estado === 'no_aplica'
                   ? '—'
                   : `${p.evidencias.aprobadas} aprobadas${p.evidencias.enRevision ? `, ${p.evidencias.enRevision} en revisión` : ''}`}
+              </td>
+              <td className={td}>
+                {p.estado === 'no_aplica' || p.prerrequisitos.length === 0 ? '—' : p.prerrequisitosPendientes.length ? <Insignia tono="aviso">Espera {p.prerrequisitosPendientes.join(', ')}</Insignia> : <span className="text-[13px] text-via">Listo</span>}
+              </td>
+              <td className={td}>
+                {p.hallazgosAbiertos || p.accionesAbiertas ? (
+                  <span className="text-[13px]">
+                    {p.hallazgosAbiertos ? <span className={p.noConformidadesAbiertas ? 'font-semibold text-alerta' : ''}>{p.hallazgosAbiertos} hallazgo(s)</span> : null}
+                    {p.hallazgosAbiertos && p.accionesAbiertas ? ' · ' : ''}
+                    {p.accionesAbiertas ? <span className={p.accionesVencidas ? 'font-semibold text-alerta' : ''}>{p.accionesAbiertas} acción(es){p.accionesVencidas ? `, ${p.accionesVencidas} vencida(s)` : ''}</span> : null}
+                  </span>
+                ) : '—'}
               </td>
               <td className={td}>{p.clausulasIso.join(', ')}</td>
             </tr>

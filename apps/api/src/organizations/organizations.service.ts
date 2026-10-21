@@ -11,6 +11,9 @@ import {
   clasificar,
   CORRESPONDENCIA_PESV_ISO,
   PASOS_PESV,
+  pasosQueDependenDe,
+  PRERREQUISITOS_PASO,
+  prerrequisitosPendientes,
   RES_40595_2022,
   type CrearOrganizacionInput,
   type EstadoPaso,
@@ -22,6 +25,7 @@ import { suscripcionInicial } from '../suscripciones/reglas.js';
 import { reglasDeCorreoIniciales } from '../correo/notificaciones.js';
 import { DatabaseService, type TenantTx } from '../db/database.service.js';
 import {
+  actions,
   classifications,
   drivers,
   evidenceLinks,
@@ -29,6 +33,7 @@ import {
   memberships,
   organizations,
   stepCompliance,
+  stepFindings,
   users,
   vehicles,
 } from '../db/schema.js';
@@ -193,17 +198,37 @@ export class OrganizationsService {
         .where(and(eq(evidenceLinks.norm, 'PESV'), sql`not exists (select 1 from evidences e2 where e2.replaces_id = ${evidences.id})`))
         .groupBy(evidenceLinks.ref, evidences.status);
       const porNumero = new Map(filas.map((f) => [f.stepNumber, f]));
+      const hallazgos = await tx
+        .select({ paso: stepFindings.stepNumber, tipo: stepFindings.kind, total: count() })
+        .from(stepFindings)
+        .where(eq(stepFindings.status, 'abierto'))
+        .groupBy(stepFindings.stepNumber, stepFindings.kind);
+      const acciones = await tx
+        .select({ paso: actions.stepNumber, vencidas: sql<number>`count(*) filter (where ${actions.dueOn} < current_date)::int`, total: count() })
+        .from(actions)
+        .where(eq(actions.status, 'abierta'))
+        .groupBy(actions.stepNumber);
+      const estados = Object.fromEntries(PASOS_PESV.map((p) => [p.numero, (porNumero.get(p.numero)?.status ?? 'pendiente') as string]));
       return PASOS_PESV.map((p) => {
         const delPaso = conteo.filter((c) => c.ref === String(p.numero));
         const n = (s: string) => delPaso.find((c) => c.status === s)?.total ?? 0;
+        const h = hallazgos.filter((x) => x.paso === p.numero);
+        const a = acciones.find((x) => x.paso === p.numero);
         return {
           numero: p.numero,
           fase: p.fase,
           nombre: p.nombre,
-          estado: (porNumero.get(p.numero)?.status ?? 'pendiente') as EstadoPaso,
+          estado: estados[p.numero] as EstadoPaso,
           actualizado: porNumero.get(p.numero)?.updatedAt ?? null,
           clausulasIso: CORRESPONDENCIA_PESV_ISO[p.numero] ?? [],
           evidencias: { aprobadas: n('aprobada'), enRevision: n('borrador'), rechazadas: n('rechazada') },
+          prerrequisitos: (PRERREQUISITOS_PASO[p.numero] ?? []).map((q) => ({ numero: q, estado: estados[q] as EstadoPaso })),
+          prerrequisitosPendientes: prerrequisitosPendientes(p.numero, estados),
+          habilita: pasosQueDependenDe(p.numero),
+          hallazgosAbiertos: h.reduce((s, x) => s + x.total, 0),
+          noConformidadesAbiertas: h.find((x) => x.tipo === 'no_conformidad')?.total ?? 0,
+          accionesAbiertas: a?.total ?? 0,
+          accionesVencidas: a?.vencidas ?? 0,
         };
       });
     });
@@ -227,6 +252,18 @@ export class OrganizationsService {
         throw new BadRequestException('Este paso no aplica al nivel de la organización');
       }
       if (estado === 'hecho') {
+        // Pasos conectados: los prerrequisitos deben estar cerrados y no puede haber no conformidades abiertas.
+        const todos = await tx.select({ n: stepCompliance.stepNumber, s: stepCompliance.status }).from(stepCompliance).where(and(eq(stepCompliance.organizationId, id), eq(stepCompliance.normativeVersionId, VERSION)));
+        const pendientes = prerrequisitosPendientes(numero, Object.fromEntries(todos.map((t) => [t.n, t.s])));
+        if (pendientes.length) {
+          const nombres = pendientes.map((q) => `${q}. ${PASOS_PESV.find((p) => p.numero === q)!.nombre}`).join('; ');
+          throw new UnprocessableEntityException(`Antes de cerrar este paso deben estar hechos: ${nombres}`);
+        }
+        const [{ nc } = { nc: 0 }] = await tx
+          .select({ nc: count() })
+          .from(stepFindings)
+          .where(and(eq(stepFindings.stepNumber, numero), eq(stepFindings.status, 'abierto'), eq(stepFindings.kind, 'no_conformidad')));
+        if (nc > 0) throw new UnprocessableEntityException('El paso tiene no conformidades abiertas: trátalas en el plan de acción antes de cerrarlo');
         const [{ total } = { total: 0 }] = await tx
           .select({ total: count() })
           .from(evidenceLinks)

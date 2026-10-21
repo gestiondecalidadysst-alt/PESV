@@ -1,42 +1,25 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  capacitacionSchema,
-  metaSchema,
-  type CapacitacionInput,
-  type MetaInput,
-} from '@pesv/shared';
+import { metaSchema, type MetaInput } from '@pesv/shared';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router';
 import type { z } from 'zod';
-import { Aviso, Boton, Campo, Cargando, Casilla, Encabezado, Insignia, Pagina, Pestanas, Selector, Subtitulo, Tabla, Tarjeta, Vacio, fecha, td, th } from '../components/ui';
+import { Aviso, Boton, Campo, Cargando, Encabezado, Insignia, Pagina, Selector, Subtitulo, Tabla, Tarjeta, Vacio, td, th } from '../components/ui';
 import { api } from '../lib/api';
 import { useAccion, useConsulta } from '../lib/consultas';
 import { useSesion } from '../lib/sesion';
-import type { Conductor } from '../lib/tipos';
 
-type Pestana = 'metas' | 'capacitaciones';
 const numero = (v: string) => (v === '' ? null : Number(v));
 const entero = (v: string) => (v === '' ? undefined : Number(v));
 
 export function Planificacion() {
-  const [pestana, setPestana] = useState<Pestana>('metas');
   return (
     <Pagina>
       <Encabezado
-        titulo="Planificación"
-        descripcion={<>Objetivos y metas (paso 7) y plan anual de formación (paso 10). La matriz de riesgos (paso 6) y el plan de trabajo (paso 9) tienen su propia sección: <Link to="/matriz-riesgos" className="font-semibold text-[#1d4e89] underline">Matriz de riesgos</Link> y <Link to="/plan-trabajo" className="font-semibold text-[#1d4e89] underline">Plan de trabajo</Link>.</>}
+        titulo="Objetivos y metas"
+        descripcion={<>Paso 7 · Objetivos del PESV con su indicador y meta para el año. Las actividades del <Link to="/plan-trabajo" className="font-semibold text-[#1d4e89] underline">plan de trabajo</Link> se relacionan con estas metas.</>}
       />
-      <Pestanas
-        valor={pestana}
-        alCambiar={setPestana}
-        opciones={[
-          { id: 'metas', nombre: 'Objetivos y metas' },
-          { id: 'capacitaciones', nombre: 'Capacitaciones' },
-        ]}
-      />
-      {pestana === 'metas' && <Metas />}
-      {pestana === 'capacitaciones' && <Capacitaciones />}
+      <Metas />
     </Pagina>
   );
 }
@@ -141,116 +124,5 @@ function SelectorAnio({ anio, alCambiar }: { anio: number; alCambiar: (a: number
     <Selector id="anio" etiqueta="Año" className="max-w-40" value={anio} onChange={(e) => alCambiar(Number(e.target.value))}>
       {[actual + 1, actual, actual - 1, actual - 2].map((a) => <option key={a} value={a}>{a}</option>)}
     </Selector>
-  );
-}
-
-// Capacitaciones --------------------------------------------------------------
-
-interface Capacitacion {
-  id: string;
-  titulo: string;
-  tema: string;
-  programadaEl: string;
-  ejecutadaEl: string | null;
-  horas: number | null;
-  instructor: string | null;
-  estado: CapacitacionInput['estado'];
-  asistentes: { id: string; conductorId: string | null; nombre: string; documento: string; asistio: boolean }[];
-}
-
-function Capacitaciones() {
-  const { puede } = useSesion();
-  const capacitaciones = useConsulta<Capacitacion[]>(['capacitaciones'], '/org/capacitaciones');
-  const [asistencia, setAsistencia] = useState<string | null>(null);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<z.input<typeof capacitacionSchema>, unknown, CapacitacionInput>({
-    resolver: zodResolver(capacitacionSchema),
-    defaultValues: { estado: 'programada' },
-  });
-  const crear = useAccion((d: CapacitacionInput) => api.post('/org/capacitaciones', d), { alTerminar: () => reset({ estado: 'programada' }) });
-  return (
-    <>
-      {capacitaciones.isPending ? <Cargando /> : capacitaciones.data?.length ? (
-        <div className="flex flex-col gap-3">
-          {capacitaciones.data.map((c) => (
-            <Tarjeta key={c.id}>
-              <Subtitulo acciones={<Insignia tono={c.estado === 'ejecutada' ? 'exito' : c.estado === 'cancelada' ? 'neutro' : 'aviso'}>{c.estado === 'ejecutada' ? 'Ejecutada' : c.estado === 'cancelada' ? 'Cancelada' : 'Programada'}</Insignia>}>
-                {c.titulo}
-              </Subtitulo>
-              <p className="text-sm text-gris">{c.tema} · {fecha(c.programadaEl)}{c.horas ? ` · ${c.horas} h` : ''}{c.instructor ? ` · ${c.instructor}` : ''}</p>
-              <p className="text-sm">{c.asistentes.filter((a) => a.asistio).length} asistentes registrados</p>
-              {puede('gestionar_pesv') && (asistencia === c.id ? (
-                <Asistentes capacitacion={c} alTerminar={() => setAsistencia(null)} />
-              ) : (
-                <Boton variante="texto" className="self-start" onClick={() => setAsistencia(c.id)}>Registrar asistencia</Boton>
-              ))}
-            </Tarjeta>
-          ))}
-        </div>
-      ) : (
-        <Vacio titulo="Sin capacitaciones">Programa la formación en seguridad vial; cada conductor debe tener su registro de asistencia.</Vacio>
-      )}
-      <Aviso error={capacitaciones.error} />
-      {puede('gestionar_pesv') && (
-        <Tarjeta>
-          <Subtitulo>Programar capacitación</Subtitulo>
-          <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit((d) => crear.mutate(d))}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Campo id="cp-titulo" etiqueta="Título" error={errors.titulo?.message} {...register('titulo')} />
-              <Campo id="cp-tema" etiqueta="Tema" error={errors.tema?.message} {...register('tema')} />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-4">
-              <Campo id="cp-fecha" etiqueta="Fecha" type="date" error={errors.programadaEl?.message} {...register('programadaEl')} />
-              <Campo id="cp-horas" etiqueta="Horas" type="number" step="0.5" min={0} {...register('horas', { setValueAs: numero })} />
-              <Campo id="cp-inst" etiqueta="Instructor" {...register('instructor')} />
-              <Selector id="cp-estado" etiqueta="Estado" {...register('estado')}>
-                <option value="programada">Programada</option>
-                <option value="ejecutada">Ejecutada</option>
-                <option value="cancelada">Cancelada</option>
-              </Selector>
-            </div>
-            <Aviso error={crear.error} />
-            <Boton type="submit" className="self-start" cargando={crear.isPending}>Programar</Boton>
-          </form>
-        </Tarjeta>
-      )}
-    </>
-  );
-}
-
-function Asistentes({ capacitacion, alTerminar }: { capacitacion: Capacitacion; alTerminar: () => void }) {
-  const conductores = useConsulta<Conductor[]>(['conductores'], '/org/conductores');
-  const [marcados, setMarcados] = useState<Set<string>>(() => new Set(capacitacion.asistentes.filter((a) => a.asistio && a.conductorId).map((a) => a.conductorId!)));
-  const guardar = useAccion(
-    () =>
-      api.put(`/org/capacitaciones/${capacitacion.id}/asistentes`, {
-        asistentes: (conductores.data ?? []).filter((c) => marcados.has(c.id)).map((c) => ({ conductorId: c.id, nombre: c.nombre, documento: c.documento, asistio: true })),
-      }),
-    { alTerminar },
-  );
-  if (conductores.isPending) return <Cargando />;
-  return (
-    <div className="flex flex-col gap-3 rounded-xl bg-papel p-4">
-      <p className="text-sm font-semibold">Conductores que asistieron</p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {(conductores.data ?? []).map((c) => (
-          <Casilla
-            key={c.id}
-            etiqueta={c.nombre}
-            checked={marcados.has(c.id)}
-            onChange={(e) => {
-              const n = new Set(marcados);
-              if (e.target.checked) n.add(c.id);
-              else n.delete(c.id);
-              setMarcados(n);
-            }}
-          />
-        ))}
-      </div>
-      <Aviso error={guardar.error} />
-      <div className="flex gap-2">
-        <Boton cargando={guardar.isPending} disabled={marcados.size === 0} onClick={() => guardar.mutate(undefined)}>Guardar asistencia</Boton>
-        <Boton variante="secundario" onClick={alTerminar}>Cancelar</Boton>
-      </div>
-    </div>
   );
 }

@@ -148,31 +148,6 @@ export const metaSchema = z.object({
 });
 export type MetaInput = z.infer<typeof metaSchema>;
 
-export const capacitacionSchema = z.object({
-  titulo: texto(3, 200, 'Escribe el título'),
-  tema: texto(3, 300, 'Escribe el tema'),
-  programadaEl: fecha,
-  ejecutadaEl: fecha.optional().nullable(),
-  horas: z.number().positive().max(200).optional().nullable(),
-  instructor: opcional(150),
-  estado: z.enum(['programada', 'ejecutada', 'cancelada']).default('programada'),
-});
-export type CapacitacionInput = z.infer<typeof capacitacionSchema>;
-
-export const asistentesCapacitacionSchema = z.object({
-  asistentes: z
-    .array(
-      z.object({
-        conductorId: uuid.optional().nullable(),
-        nombre: texto(3, 150, 'Escribe el nombre'),
-        documento: z.string().trim().regex(/^\d{5,12}$/, 'Escribe la cédula sin puntos'),
-        asistio: z.boolean().default(true),
-      }),
-    )
-    .min(1, 'Agrega al menos un asistente'),
-});
-export type AsistentesCapacitacionInput = z.infer<typeof asistentesCapacitacionSchema>;
-
 // Desplazamientos -----------------------------------------------------------
 
 export const rutaSchema = z.object({

@@ -1,18 +1,11 @@
-import { Body, Controller, Get, Injectable, Module, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Put, Query } from '@nestjs/common';
-import {
-  asistentesCapacitacionSchema,
-  capacitacionSchema,
-  metaSchema,
-  type AsistentesCapacitacionInput,
-  type CapacitacionInput,
-  type MetaInput,
-} from '@pesv/shared';
+import { Body, Controller, Get, Injectable, Module, NotFoundException, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
+import { metaSchema, type MetaInput } from '@pesv/shared';
 import { asc, desc, eq } from 'drizzle-orm';
 import { OrgActual, Permiso, UsuarioActual, type OrgSesion, type UsuarioSesion } from '../auth/decorators.js';
 import { auditar } from '../common/audit.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { DatabaseService } from '../db/database.service.js';
-import { goals, trainingAttendance, trainings } from '../db/schema.js';
+import { goals } from '../db/schema.js';
 
 type FilaMeta = typeof goals.$inferSelect;
 
@@ -59,67 +52,6 @@ export class PlanificacionService {
       return aMeta(m);
     });
   }
-
-  capacitaciones(orgId: string) {
-    return this.database.withTenant(orgId, async (tx) => {
-      const filas = await tx.select().from(trainings).orderBy(desc(trainings.plannedOn));
-      const asistentes = await tx.select().from(trainingAttendance);
-      return filas.map((t) => ({
-        id: t.id,
-        titulo: t.title,
-        tema: t.topic,
-        programadaEl: t.plannedOn,
-        ejecutadaEl: t.executedOn,
-        horas: t.hours,
-        instructor: t.instructor,
-        estado: t.status,
-        asistentes: asistentes
-          .filter((a) => a.trainingId === t.id)
-          .map((a) => ({ id: a.id, conductorId: a.driverId, nombre: a.fullName, documento: a.documentNumber, asistio: a.attended })),
-      }));
-    });
-  }
-
-  guardarCapacitacion(orgId: string, input: CapacitacionInput, actorId: string, id?: string) {
-    return this.database.withTenant(orgId, async (tx) => {
-      const valores = {
-        title: input.titulo,
-        topic: input.tema,
-        plannedOn: input.programadaEl,
-        executedOn: input.estado === 'ejecutada' ? (input.ejecutadaEl ?? input.programadaEl) : null,
-        hours: input.horas ?? null,
-        instructor: input.instructor ?? null,
-        status: input.estado,
-      };
-      const [t] = id
-        ? await tx.update(trainings).set(valores).where(eq(trainings.id, id)).returning()
-        : await tx.insert(trainings).values({ organizationId: orgId, ...valores }).returning();
-      if (!t) throw new NotFoundException('Capacitación no encontrada');
-      await auditar(tx, { organizacionId: orgId, actorId, accion: id ? 'capacitacion.actualizada' : 'capacitacion.programada', entidad: 'training', entidadId: t.id });
-      return t;
-    });
-  }
-
-  /** Lista de asistencia (nombre, cédula, fecha y tema): soporte del formulario administrativo de VIGIA 2. */
-  asistentes(orgId: string, id: string, input: AsistentesCapacitacionInput, actorId: string) {
-    return this.database.withTenant(orgId, async (tx) => {
-      const [t] = await tx.select({ id: trainings.id }).from(trainings).where(eq(trainings.id, id));
-      if (!t) throw new NotFoundException('Capacitación no encontrada');
-      await tx.delete(trainingAttendance).where(eq(trainingAttendance.trainingId, id));
-      await tx.insert(trainingAttendance).values(
-        input.asistentes.map((a) => ({
-          trainingId: id,
-          organizationId: orgId,
-          driverId: a.conductorId ?? null,
-          fullName: a.nombre,
-          documentNumber: a.documento,
-          attended: a.asistio,
-        })),
-      );
-      await auditar(tx, { organizacionId: orgId, actorId, accion: 'capacitacion.asistencia', entidad: 'training', entidadId: id, datos: { asistentes: input.asistentes.length } });
-      return { id, asistentes: input.asistentes.length };
-    });
-  }
 }
 
 @Controller('org')
@@ -134,18 +66,6 @@ export class PlanificacionController {
 
   @Patch('metas/:id') @Permiso('gestionar_pesv')
   editarMeta(@Param('id', ParseUUIDPipe) id: string, @Body(new ZodValidationPipe(metaSchema)) b: MetaInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.guardarMeta(o.id, b, u.id, id); }
-
-  @Get('capacitaciones') @Permiso('ver')
-  capacitaciones(@OrgActual() o: OrgSesion) { return this.s.capacitaciones(o.id); }
-
-  @Post('capacitaciones') @Permiso('gestionar_pesv')
-  crearCapacitacion(@Body(new ZodValidationPipe(capacitacionSchema)) b: CapacitacionInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.guardarCapacitacion(o.id, b, u.id); }
-
-  @Patch('capacitaciones/:id') @Permiso('gestionar_pesv')
-  editarCapacitacion(@Param('id', ParseUUIDPipe) id: string, @Body(new ZodValidationPipe(capacitacionSchema)) b: CapacitacionInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.guardarCapacitacion(o.id, b, u.id, id); }
-
-  @Put('capacitaciones/:id/asistentes') @Permiso('gestionar_pesv')
-  asistentes(@Param('id', ParseUUIDPipe) id: string, @Body(new ZodValidationPipe(asistentesCapacitacionSchema)) b: AsistentesCapacitacionInput, @OrgActual() o: OrgSesion, @UsuarioActual() u: UsuarioSesion) { return this.s.asistentes(o.id, id, b, u.id); }
 }
 
 @Module({ controllers: [PlanificacionController], providers: [PlanificacionService], exports: [PlanificacionService] })

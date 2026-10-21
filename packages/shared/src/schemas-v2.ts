@@ -11,6 +11,7 @@ import {
   NIVELES_EXPOSICION,
 } from './catalog/matriz-riesgos';
 import { IDS_FASE_PHVA } from './catalog/plan-trabajo';
+import { IDS_FACILITADOR, IDS_METODO_EVALUACION, IDS_MODALIDAD_FORMACION, IDS_PUBLICO_FORMACION, IDS_TEMA_FORMACION, IDS_TIPO_FORMACION } from './catalog/formacion';
 
 const fecha = z
   .string()
@@ -162,3 +163,56 @@ export const seguimientoActividadSchema = z
   .refine((s) => !s.ejecutado || !!s.fecha, { message: 'Indica la fecha de ejecución', path: ['fecha'] })
   .refine((s) => s.ejecutado || !!s.nota, { message: 'Explica por qué no se ejecutó', path: ['nota'] });
 export type SeguimientoActividadInput = z.infer<typeof seguimientoActividadSchema>;
+
+// Plan anual de formación (paso 10) -------------------------------------------------
+
+export const capacitacionPlanSchema = z.object({
+  titulo: texto(3, 200, 'Escribe el título'),
+  tipo: z.enum(IDS_TIPO_FORMACION).default('formacion'),
+  temaId: z.enum(IDS_TEMA_FORMACION),
+  tema: opcional(500),
+  objetivo: opcional(1000),
+  publico: z.array(z.enum(IDS_PUBLICO_FORMACION)).min(1, 'Elige al menos un público'),
+  modalidad: z.enum(IDS_MODALIDAD_FORMACION).default('presencial'),
+  programadaEl: fecha,
+  horas: z.number().positive('Las horas deben ser mayores que cero').max(200).nullable().optional(),
+  facilitador: opcional(150),
+  tipoFacilitador: z.enum(IDS_FACILITADOR).default('interno'),
+  lugar: opcional(200),
+  evaluacion: z.enum(IDS_METODO_EVALUACION).default('evaluacion_escrita'),
+  notaMinima: z.number().min(0).max(100).default(70),
+  riesgoId: z.string().uuid().nullable().optional(),
+  enPlanDeTrabajo: z.boolean().default(true),
+  cancelada: z.boolean().default(false),
+});
+export type CapacitacionPlanInput = z.infer<typeof capacitacionPlanSchema>;
+
+export const asistenciaCapacitacionSchema = z.object({
+  asistentes: z
+    .array(
+      z.object({
+        conductorId: z.string().uuid().nullable().optional(),
+        nombre: texto(3, 150, 'Escribe el nombre'),
+        documento: z.string().trim().regex(/^\d{5,12}$/, 'Escribe la cédula sin puntos'),
+        cargo: opcional(150),
+        asistio: z.boolean().default(true),
+        nota: z.number().min(0).max(100).nullable().optional(),
+      }),
+    )
+    .min(1, 'Agrega al menos una persona')
+    .refine((l) => new Set(l.map((a) => a.documento)).size === l.length, 'Hay cédulas repetidas en la lista'),
+});
+export type AsistenciaCapacitacionInput = z.infer<typeof asistenciaCapacitacionSchema>;
+
+export const ejecutarCapacitacionSchema = z.object({
+  fecha,
+  horas: z.number().positive().max(200).nullable().optional(),
+});
+export type EjecutarCapacitacionInput = z.infer<typeof ejecutarCapacitacionSchema>;
+
+export const eficaciaSchema = z.object({
+  efectiva: z.boolean(),
+  fecha,
+  nota: texto(5, 2000, 'Describe cómo se verificó la eficacia'),
+});
+export type EficaciaInput = z.infer<typeof eficaciaSchema>;

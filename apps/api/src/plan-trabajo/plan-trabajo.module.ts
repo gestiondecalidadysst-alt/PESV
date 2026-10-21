@@ -54,6 +54,7 @@ type FilaActividad = typeof planActivities.$inferSelect;
 type FilaSeguimiento = typeof planFollowups.$inferSelect;
 
 const hoy = () => new Date().toISOString().slice(0, 10);
+const MENSAJE_FORMACION = 'Esta actividad viene del plan de formación: su fecha y su ejecución se registran allá';
 const nombreDe = <T extends { id: string; nombre: string }>(lista: readonly T[], id: string | null | undefined) => lista.find((x) => x.id === id)?.nombre ?? '—';
 const pesos = (v: number | null | undefined) => (v == null ? '—' : new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v));
 
@@ -165,6 +166,12 @@ export class PlanTrabajoService {
         if (m.year !== input.anio) throw new BadRequestException('La meta pertenece a otro año');
       }
       const anterior = id ? await this.actividad(tx, id) : null;
+      if (
+        anterior?.source === 'capacitacion' &&
+        (anterior.year !== input.anio || anterior.plannedMonths.join() !== input.meses.join() || (anterior.status === 'cancelada') !== input.cancelada)
+      ) {
+        throw new BadRequestException(MENSAJE_FORMACION);
+      }
       const valores = {
         year: input.anio,
         title: input.titulo,
@@ -214,6 +221,7 @@ export class PlanTrabajoService {
   async seguimiento(orgId: string, id: string, input: SeguimientoActividadInput, archivo: { nombre: string; tipo: string; datos: Buffer } | null, actorId: string) {
     const a = await this.database.withTenant(orgId, (tx) => this.actividad(tx, id));
     if (a.status === 'cancelada') throw new BadRequestException('La actividad está cancelada');
+    if (a.source === 'capacitacion') throw new BadRequestException(MENSAJE_FORMACION);
     if (!a.plannedMonths.includes(input.mes)) throw new BadRequestException(`La actividad no está programada en ${MESES_LARGOS[input.mes - 1]}`);
     const fechaEjecucion = input.ejecutado ? input.fecha! : null;
     if (fechaEjecucion && fechaEjecucion > hoy()) throw new BadRequestException('La fecha de ejecución no puede ser futura');
@@ -241,7 +249,7 @@ export class PlanTrabajoService {
 
   quitarSeguimiento(orgId: string, id: string, mes: number, actorId: string) {
     return this.database.withTenant(orgId, async (tx) => {
-      await this.actividad(tx, id);
+      if ((await this.actividad(tx, id)).source === 'capacitacion') throw new BadRequestException(MENSAJE_FORMACION);
       await tx.delete(planFollowups).where(and(eq(planFollowups.activityId, id), eq(planFollowups.month, mes)));
       const estado = await sincronizarActividad(tx, id);
       await auditar(tx, { organizacionId: orgId, actorId, accion: 'plan.seguimiento_eliminado', entidad: 'plan_activity', entidadId: id, datos: { mes } });

@@ -24,11 +24,12 @@ type Formato = (v: number) => string;
 const formatoPorDefecto: Formato = (v) => new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 }).format(v);
 
 /** Marcas de eje "redondas" (1, 2, 2,5, 5 × 10ⁿ). */
-function marcas(maximo: number, minimo = 0, cantidad = 4) {
+function marcas(maximo: number, minimo = 0, cantidad = 4, enteros = false) {
   const rango = Math.max(maximo - minimo, 1e-9);
-  const paso0 = rango / cantidad;
+  const paso0 = enteros ? Math.max(1, rango / cantidad) : rango / cantidad;
   const potencia = 10 ** Math.floor(Math.log10(paso0));
-  const paso = [1, 2, 2.5, 5, 10].map((m) => m * potencia).find((p) => p >= paso0) ?? 10 * potencia;
+  const multiplos = enteros && potencia === 1 ? [1, 2, 5, 10] : [1, 2, 2.5, 5, 10];
+  const paso = multiplos.map((m) => m * potencia).find((p) => p >= paso0) ?? 10 * potencia;
   const inicio = Math.floor(minimo / paso) * paso;
   const fin = Math.ceil(maximo / paso) * paso;
   const lista: number[] = [];
@@ -126,6 +127,7 @@ export function GraficaBarras({
   series,
   formato = formatoPorDefecto,
   ancho = 640,
+  enteros = false,
 }: {
   titulo: string;
   descripcion?: ReactNode;
@@ -133,11 +135,13 @@ export function GraficaBarras({
   series: Serie[];
   formato?: Formato;
   ancho?: number;
+  /** Conteos: el eje solo muestra números enteros. */
+  enteros?: boolean;
 }) {
   const [activa, setActiva] = useState<number | null>(null);
   const conColor = series.map((s, i) => ({ ...s, color: s.color ?? SERIES[i % SERIES.length]! }));
   const maximo = Math.max(1, ...conColor.flatMap((s) => s.valores.map((v) => v ?? 0)));
-  const ticks = marcas(maximo);
+  const ticks = marcas(maximo, 0, 4, enteros);
   const tope = ticks[ticks.length - 1]!;
   const interior = { ancho: ancho - M.izquierda - M.derecha, alto: ALTO - M.arriba - M.abajo };
   const banda = interior.ancho / Math.max(categorias.length, 1);
@@ -335,8 +339,8 @@ export function Avance({ etiqueta, valor, meta, detalle }: { etiqueta: string; v
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-baseline justify-between gap-2 text-sm">
-        <span className="font-semibold text-tinta">{etiqueta}</span>
-        <span className="tabular-nums text-tinta">
+        <span className="min-w-0 flex-1 font-semibold text-tinta">{etiqueta}</span>
+        <span className="shrink-0 whitespace-nowrap tabular-nums text-tinta">
           <strong>{valor == null ? '—' : `${Math.round(valor)} %`}</strong>
           {estado && <span className="ml-1.5 text-[12px] text-gris">{estado}</span>}
         </span>

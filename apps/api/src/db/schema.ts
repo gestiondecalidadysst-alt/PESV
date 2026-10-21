@@ -559,6 +559,22 @@ export const trainings = pgTable('trainings', {
   instructor: text('instructor'),
   status: text('status').notNull().default('programada'),
   createdAt: creado(),
+  year: smallint('year').notNull(),
+  kind: text('kind').notNull().default('formacion'),
+  topicId: text('topic_id').notNull().default('otro'),
+  objective: text('objective'),
+  audience: text('audience').array().notNull().default(['conductores']),
+  modality: text('modality').notNull().default('presencial'),
+  location: text('location'),
+  providerType: text('provider_type').notNull().default('interno'),
+  evaluation: text('evaluation').notNull().default('evaluacion_escrita'),
+  passingScore: numeric('passing_score', { mode: 'number' }).notNull().default(70),
+  effective: boolean('effective'),
+  effectivenessOn: date('effectiveness_on'),
+  effectivenessNote: text('effectiveness_note'),
+  riskId: uuid('risk_id'),
+  planActivityId: uuid('plan_activity_id'),
+  updatedAt: actualizado(),
 });
 
 export const trainingAttendance = pgTable('training_attendance', {
@@ -569,6 +585,9 @@ export const trainingAttendance = pgTable('training_attendance', {
   fullName: text('full_name').notNull(),
   documentNumber: text('document_number').notNull(),
   attended: boolean('attended').notNull().default(true),
+  jobRole: text('job_role'),
+  score: numeric('score', { mode: 'number' }),
+  createdAt: creado(),
 });
 
 export const routes = pgTable('routes', {

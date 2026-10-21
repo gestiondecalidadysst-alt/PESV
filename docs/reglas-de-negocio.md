@@ -82,6 +82,10 @@ regla ya está implementada.
 | RN-49 | Cumplimiento del plan a la fecha = meses-actividad ejecutados ÷ meses-actividad programados hasta el mes en curso. Un mes programado ya vencido sin ejecutar marca la actividad como atrasada; si no se ejecutó, el seguimiento exige una justificación. | Implementada |
 | RN-50 | El soporte que se adjunta al seguimiento queda como evidencia del paso de la actividad, pendiente de aprobación. El plan completo se puede guardar como evidencia del paso 9. | Implementada |
 | RN-51 | Una actividad que viene de una medida de la matriz se sincroniza con ella: al ejecutarse el plan la medida queda implementada, y al implementar la medida se dan por ejecutados sus meses pendientes. | Implementada |
+| RN-52 | Cada capacitación del plan de formación (paso 10) tiene tema, público, modalidad, fecha, duración, facilitador y método de evaluación, y puede atender un riesgo de la matriz. Por defecto entra al plan de trabajo como actividad del paso 10 y su ejecución se registra solo desde el plan de formación. | Implementada |
+| RN-53 | Una capacitación se marca como ejecutada solo con al menos un asistente registrado, una fecha no futura del mismo año y su duración. Ya ejecutada no se puede cancelar ni eliminar. | Implementada |
+| RN-54 | Indicadores del plan de formación: cumplimiento = ejecutadas ÷ programadas con fecha vencida; cobertura = conductores activos formados en el año ÷ conductores activos; eficacia = asistentes que alcanzan la nota mínima ÷ asistentes evaluados; además, asistencia y horas-persona. | Implementada |
+| RN-55 | La eficacia de una capacitación ejecutada se verifica después (observación, inspecciones, telemetría o siniestralidad), con fecha no anterior a la capacitación. Si no fue eficaz, se sugiere una acción de mejora. | Implementada |
 
 ## Cuentas, suscripción y datos
 

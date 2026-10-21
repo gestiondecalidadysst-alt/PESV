@@ -80,7 +80,7 @@ interface Plan {
 const nombreDe = <T extends { id: string; nombre: string }>(lista: readonly T[], id: string | null | undefined) => lista.find((x) => x.id === id)?.nombre ?? '—';
 const pesos = (v: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v);
 const enlaceBoton = 'inline-flex min-h-10 items-center rounded-lg bg-white px-3 text-sm font-semibold text-[#1d4e89] ring-1 ring-linea';
-const RUTA_ORIGEN: Partial<Record<OrigenActividad, string>> = { riesgo: '/matriz-riesgos', hallazgo: '/acciones', capacitacion: '/planificacion' };
+const RUTA_ORIGEN: Partial<Record<OrigenActividad, string>> = { riesgo: '/matriz-riesgos', hallazgo: '/acciones', capacitacion: '/capacitacion' };
 
 /** Cómo se ve un mes del cronograma: letra + color (nunca solo color). */
 const MES_ESTADO = {
@@ -154,6 +154,7 @@ export function PlanTrabajo() {
                     { nombre: 'Programadas', valores: datos.resumen.porMes.map((m) => m.programados) },
                     { nombre: 'Ejecutadas', valores: datos.resumen.porMes.map((m) => m.ejecutados) },
                   ]}
+                  enteros
                   formato={(v) => String(Math.round(v))}
                 />
               </Tarjeta>
@@ -234,7 +235,7 @@ export function PlanTrabajo() {
                               {e ? (
                                 <button
                                   type="button"
-                                  disabled={!gestiona || a.estado === 'cancelada'}
+                                  disabled={!gestiona || a.estado === 'cancelada' || a.origen === 'capacitacion'}
                                   aria-label={`${a.titulo}, ${MESES_LARGOS[i]}: ${MES_ESTADO[e].texto}${gestiona ? '. Registrar seguimiento' : ''}`}
                                   title={MES_ESTADO[e].texto}
                                   onClick={() => { setCelda({ actividad: a, mes: i + 1 }); setEditando(null); }}
@@ -442,7 +443,12 @@ function FormularioActividad({ actividad, anio, metas, alTerminar }: { actividad
   return (
     <Tarjeta>
       <Subtitulo>{actividad ? 'Editar actividad' : `Programar actividad ${anio}`}</Subtitulo>
-      {actividad && actividad.origen !== 'manual' && <Aviso tono="info">Esta actividad viene de: {nombreDe(ORIGENES_ACTIVIDAD, actividad.origen)}. Su avance se refleja allá.</Aviso>}
+      {actividad && actividad.origen !== 'manual' && (
+        <Aviso tono="info">
+          Esta actividad viene de: {nombreDe(ORIGENES_ACTIVIDAD, actividad.origen)}.{' '}
+          {actividad.origen === 'capacitacion' ? 'La fecha, la cancelación y la ejecución se manejan en el plan de formación; aquí puedes completar la meta, los recursos y el presupuesto.' : 'Su avance se refleja allá.'}
+        </Aviso>
+      )}
       <form noValidate className="flex flex-col gap-4" onSubmit={handleSubmit((d) => guardar.mutate(d))}>
         <input type="hidden" {...register('anio', { valueAsNumber: true })} />
         <div className="grid gap-4 sm:grid-cols-3">

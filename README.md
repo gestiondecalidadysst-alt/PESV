@@ -152,6 +152,8 @@ membresía y el permiso del rol.
 | Mantenimiento | `/org/mantenimiento/planes`, `/org/mantenimiento/ordenes`, `POST /org/mantenimiento/ordenes/:id/cerrar` |
 | Siniestros | `GET/POST /org/siniestros`, `PATCH /org/siniestros/:id/investigacion`, `POST /org/siniestros/:id/acciones`, `POST /org/siniestros/:id/borrador-ia` |
 | Comité | `/org/comite/miembros`, `GET /org/comite/agenda-sugerida`, `/org/comite/reuniones/:id` (`iniciar`, `puntos`, `asistencia`, `llegada`, `decisiones`, `compromisos`, `transcripcion`, `borrador-acta`, `cerrar`, `firmar`, `acta`) |
+| Requisitos de los pasos | `GET /org/requisitos`, `GET /org/pasos/:n/requisitos`, `POST /org/pasos/:n/requisitos/:id` (verificación del líder) |
+| Programas de riesgo crítico (paso 8) | `GET/POST /org/programas`, `POST /org/programas/iniciar`, `PUT/DELETE /org/programas/:id`, `POST /org/programas/:id/actividades`, `POST /org/programas/:id/actualizacion`, `POST /org/programas/revisiones`, `/org/programas/equipos`, `GET/POST /org/programas/pruebas` (datos sensibles), `GET /org/programas/exportar`, `POST /org/programas/evidencia` |
 | Plan de acción | `GET/POST /org/acciones`, `GET /org/acciones/plan`, `POST /org/acciones/:id/cerrar`, `GET /org/acciones/exportar`, `POST /org/acciones/evidencia` |
 | Hallazgos de pasos | `GET/POST /org/pasos/:n/hallazgos`, `GET /org/hallazgos`, `POST /org/hallazgos/:id/acciones`, `POST /org/hallazgos/:id/cerrar` |
 | Formato | `GET/PUT /org/formato`, `PUT /org/formato/documentos`, `GET /org/formato/vista-previa`, `GET/POST/DELETE /org/logo` |
@@ -196,6 +198,7 @@ cualquier escritura).
 | 3 · Escala | Auditorías y auditor simulado, puntaje de riesgo, telemática GPS, ISO 39001, adopción voluntaria, planes y suscripciones | Completa |
 | 4 · Producción | Recuperación de contraseña, correo, registro de errores, despliegue en VPS con respaldos | Completa |
 | 5 · Versión 2 | Formato SG, matriz GTC 45/5×5, plan de trabajo, plan de formación, indicadores y metas, perfil de colaboradores, documentos controlados, pasos conectados y plan de acción | Completa |
+| 6 · Versión 3 | Requisitos de la Res. 40595 por paso con cita y verificación automática; programas de riesgo crítico del paso 8 con equipos de velocidad, pruebas de alcohol y sustancias y revisión trimestral; los 13 indicadores de la tabla 10 | En curso |
 
 Pendiente, fuera del alcance actual:
 

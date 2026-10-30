@@ -24,6 +24,7 @@ export const ORIGENES_ACTIVIDAD = [
   { id: 'indicador', nombre: 'Indicador por debajo de la meta' },
   { id: 'paso', nombre: 'Requisito de un paso del PESV' },
   { id: 'capacitacion', nombre: 'Plan de formación' },
+  { id: 'programa', nombre: 'Programa de riesgo crítico (paso 8)' },
 ] as const;
 export type OrigenActividad = (typeof ORIGENES_ACTIVIDAD)[number]['id'];
 

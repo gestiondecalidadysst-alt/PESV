@@ -120,3 +120,45 @@ export const binario = (res: { on: (e: string, f: (c?: Buffer) => void) => void;
   res.on('data', (c?: Buffer) => partes.push(c!));
   res.on('end', () => cb(null, Buffer.concat(partes)));
 };
+
+/** Sube una evidencia del paso y la aprueba; devuelve su id. */
+export async function evidenciaAprobada(c: Cuenta, paso: number, titulo = `Evidencia del paso ${paso}`) {
+  const h = { 'x-organization-id': c.orgId };
+  const e = await c.agente.post('/api/org/evidencias').set(h).field('titulo', titulo).field('pasoNumero', String(paso)).attach('archivo', Buffer.from('%PDF-1.4 x'), { filename: 'e.pdf', contentType: 'application/pdf' }).expect(201);
+  await c.agente.post(`/api/org/evidencias/${e.body.id}/decision`).set(h).send({ decision: 'aprobar' }).expect(201);
+  return e.body.id as string;
+}
+
+/** Crea un documento controlado del paso, lo envía y lo aprueba con la firma del líder. */
+export async function documentoAprobado(c: Cuenta, paso: number, clase: string, titulo: string) {
+  const h = { 'x-organization-id': c.orgId };
+  const d = await c.agente.post('/api/org/documentos').set(h).send({ clase, titulo, pasoNumero: paso, contenido: `# ${titulo}\n\nContenido del documento.` }).expect(201);
+  await c.agente.post(`/api/org/documentos/${d.body.id}/enviar`).set(h).expect(201);
+  await c.agente.post(`/api/org/documentos/${d.body.id}/aprobar`).set(h).send({ password: 'ClaveSegura123' }).expect(201);
+  return d.body.id as string;
+}
+
+/** Verifica como líder un requisito de registro con una evidencia aprobada del paso. */
+export async function verificarRequisito(c: Cuenta, paso: number, requisito: string, evidenciaId: string) {
+  await c.agente
+    .post(`/api/org/pasos/${paso}/requisitos/${requisito}`)
+    .set({ 'x-organization-id': c.orgId })
+    .send({ estado: 'cumple', nota: 'Verificado en la revisión del líder', evidenciaId })
+    .expect(201);
+}
+
+/** Deja el paso 1 con todos sus requisitos: acta de designación y competencia del líder. */
+export async function cumplirPaso1(c: Cuenta) {
+  await documentoAprobado(c, 1, 'acta', 'Acta de designación del líder del PESV');
+  await verificarRequisito(c, 1, 'P1.2', await evidenciaAprobada(c, 1, 'Perfil de competencia del líder'));
+}
+
+/** Deja el paso 2 con todos sus requisitos: comité de tres con el líder y acta de conformación. */
+export async function cumplirPaso2(c: Cuenta) {
+  const h = { 'x-organization-id': c.orgId };
+  const yo = await c.agente.get('/api/auth/yo').expect(200);
+  await c.agente.post('/api/org/comite/miembros').set(h).send({ usuarioId: yo.body.usuario.id, nombre: 'Laura Prueba', rolComite: 'presidente' }).expect(201);
+  await c.agente.post('/api/org/comite/miembros').set(h).send({ nombre: 'Carlos Secretario', rolComite: 'secretario' }).expect(201);
+  await c.agente.post('/api/org/comite/miembros').set(h).send({ nombre: 'María Integrante' }).expect(201);
+  await documentoAprobado(c, 2, 'acta', 'Acta de conformación del comité de seguridad vial');
+}

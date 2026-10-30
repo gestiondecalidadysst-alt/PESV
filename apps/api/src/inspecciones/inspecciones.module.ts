@@ -26,6 +26,7 @@ import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
 import { DatabaseService, type TenantTx } from '../db/database.service.js';
 import { drivers, inspectionItems, inspections, vehicles } from '../db/schema.js';
 import { EventosService } from '../eventos/eventos.service.js';
+import { hoyColombia } from '../common/fechas.js';
 
 export type ResultadoInspeccion = 'apto' | 'falla_menor' | 'falla_critica';
 
@@ -153,7 +154,7 @@ export class InspeccionesService {
   }
 
   async listar(orgId: string, dia?: string) {
-    const fecha = dia && /^\d{4}-\d{2}-\d{2}$/.test(dia) ? dia : new Date().toISOString().slice(0, 10);
+    const fecha = dia && /^\d{4}-\d{2}-\d{2}$/.test(dia) ? dia : hoyColombia();
     return this.database.withTenant(orgId, async (tx) => {
       const filas = await tx
         .select({

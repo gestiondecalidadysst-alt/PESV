@@ -37,6 +37,7 @@ import { OrgActual, Permiso, UsuarioActual, type OrgSesion, type UsuarioSesion }
 import { auditar } from '../common/audit.js';
 import { verifyPassword } from '../common/crypto.js';
 import { ZodValidationPipe } from '../common/zod-validation.pipe.js';
+import { hoyColombia } from '../common/fechas.js';
 import { DatabaseService, type TenantTx } from '../db/database.service.js';
 import {
   actions,
@@ -407,7 +408,7 @@ export class ComiteService {
         .set({ status: 'cerrada', closedAt: new Date(), minutesKey: clave, minutesChecksum: checksum, evidenceId: evidenciaId })
         .where(eq(committeeMeetings.id, id));
       // Los siniestros tratados en la agenda quedan revisados por el comité (dato del registro de VIGIA 2).
-      const hoy = new Date().toISOString().slice(0, 10);
+      const hoy = hoyColombia();
       for (const p of d.agenda.filter((x) => x.origen?.startsWith('siniestro:'))) {
         await tx.update(crashes).set({ committeeReviewedOn: hoy }).where(eq(crashes.id, p.origen!.slice('siniestro:'.length)));
       }

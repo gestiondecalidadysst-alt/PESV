@@ -3,7 +3,8 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { consultarComoAdmin, crearApp, hayBaseDeDatos, limpiar, registrar, servidorDePrueba, unico, type Cuenta, type ServidorDePrueba } from './helpers.js';
 
-const hoyMas = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString().slice(0, 10);
+// Fechas de calendario en Colombia (UTC−5), como las calcula la API.
+const hoyMas = (dias: number) => new Date(Date.now() - 5 * 3600_000 + dias * 86_400_000).toISOString().slice(0, 10);
 
 describe.skipIf(!hayBaseDeDatos)('Fase 3', () => {
   let app: NestExpressApplication;

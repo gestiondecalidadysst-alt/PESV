@@ -59,6 +59,7 @@ export function Pasos() {
             <th className={th}>Paso</th>
             <th className={th}>Fase</th>
             <th className={th}>Estado</th>
+            <th className={th}>Requisitos</th>
             <th className={th}>Evidencias</th>
             <th className={th}>Requiere</th>
             <th className={th}>Hallazgos y acciones</th>
@@ -79,6 +80,11 @@ export function Pasos() {
               </td>
               <td className={td}>{FASE_LABEL[p.fase]}</td>
               <td className={td}><Insignia tono={TONO_ESTADO[p.estado]}>{TEXTO_ESTADO[p.estado]}</Insignia></td>
+              <td className={td}>
+                {p.estado === 'no_aplica' ? '—' : p.requisitos?.total ? (
+                  <span className={`whitespace-nowrap text-[13px] tabular-nums ${p.requisitos.completo ? 'text-via' : ''}`}>{p.requisitos.cumplen} de {p.requisitos.total}</span>
+                ) : <span className="text-[13px] text-gris">Por cargar</span>}
+              </td>
               <td className={td}>
                 {p.estado === 'no_aplica'
                   ? '—'

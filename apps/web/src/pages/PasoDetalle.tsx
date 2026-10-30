@@ -21,6 +21,7 @@ import { useSesion } from '../lib/sesion';
 import type { EstadoDePaso, Evidencia } from '../lib/tipos';
 import { TEXTO_ESTADO, TONO_ESTADO } from './Pasos';
 import { ConexionPaso, HallazgosPaso } from '../components/ConexionPaso';
+import { RequisitosPaso } from '../components/RequisitosPaso';
 
 const titulosIso = new Map(CLAUSULAS_ISO_39001.map((c) => [c.codigo, c.titulo]));
 const TONO_EVIDENCIA = { borrador: 'aviso', aprobada: 'exito', rechazada: 'peligro' } as const;
@@ -57,9 +58,15 @@ export function PasoDetalle() {
           <Tarjeta>
             <Subtitulo>Estado del paso</Subtitulo>
             <ul className="flex flex-col gap-1 text-sm">
-              <li className={paso.evidencias.aprobadas ? 'text-via' : 'text-gris'}>
-                {paso.evidencias.aprobadas ? '✓' : '○'} {paso.evidencias.aprobadas ? `${paso.evidencias.aprobadas} evidencia(s) aprobada(s)` : 'Necesita al menos una evidencia aprobada'}
-              </li>
+              {paso.requisitos?.total ? (
+                <li className={paso.requisitos.completo ? 'text-via' : 'text-gris'}>
+                  {paso.requisitos.completo ? '✓' : '○'} {paso.requisitos.cumplen} de {paso.requisitos.total} requisitos de la norma cumplen
+                </li>
+              ) : (
+                <li className={paso.evidencias.aprobadas ? 'text-via' : 'text-gris'}>
+                  {paso.evidencias.aprobadas ? '✓' : '○'} {paso.evidencias.aprobadas ? `${paso.evidencias.aprobadas} evidencia(s) aprobada(s)` : 'Necesita al menos una evidencia aprobada'}
+                </li>
+              )}
               <li className={paso.prerrequisitosPendientes.length ? 'text-gris' : 'text-via'}>
                 {paso.prerrequisitosPendientes.length ? '○' : '✓'}{' '}
                 {paso.prerrequisitosPendientes.length ? `Primero deben estar hechos los pasos ${paso.prerrequisitosPendientes.join(', ')}` : 'Prerrequisitos cumplidos'}
@@ -75,7 +82,7 @@ export function PasoDetalle() {
                     key={e}
                     variante={paso.estado === e ? 'principal' : 'secundario'}
                     aria-pressed={paso.estado === e}
-                    disabled={cambiarEstado.isPending || (e === 'hecho' && (!paso.evidencias.aprobadas || paso.prerrequisitosPendientes.length > 0 || paso.noConformidadesAbiertas > 0))}
+                    disabled={cambiarEstado.isPending || (e === 'hecho' && (!(paso.requisitos?.total ? paso.requisitos.completo : paso.evidencias.aprobadas) || paso.prerrequisitosPendientes.length > 0 || paso.noConformidadesAbiertas > 0))}
                     onClick={() => cambiarEstado.mutate(e)}
                   >
                     {TEXTO_ESTADO[e]}
@@ -94,6 +101,7 @@ export function PasoDetalle() {
             </div>
           </Tarjeta>
 
+          <RequisitosPaso numero={numero} />
           <ConexionPaso paso={paso} todos={pasos.data ?? []} />
           <HallazgosPaso numero={numero} />
 

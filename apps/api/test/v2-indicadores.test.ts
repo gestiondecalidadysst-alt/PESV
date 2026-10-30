@@ -38,7 +38,7 @@ describe.skipIf(!hayBaseDeDatos)('V2 · indicadores y metas', () => {
   it('carga las plantillas sugeridas y mide los automáticos por periodo', async () => {
     const inicial = await consultar();
     expect(inicial.indicadores).toEqual([]);
-    expect(inicial.plantillasDisponibles.length).toBe(12);
+    expect(inicial.plantillasDisponibles.length).toBe(18);
     await c.agente.post('/api/org/indicadores/plantillas').set(h()).send({ calculos: [] }).expect(400);
     await c.agente.post('/api/org/indicadores/plantillas').set(h()).send({ calculos: ['siniestros_viales', 'victimas_fatales', 'lesionados', 'cumplimiento_plan_trabajo', 'tasa_siniestralidad'] }).expect(201);
     const repetido = await c.agente.post('/api/org/indicadores/plantillas').set(h()).send({ calculos: ['siniestros_viales'] }).expect(201);
@@ -46,7 +46,7 @@ describe.skipIf(!hayBaseDeDatos)('V2 · indicadores y metas', () => {
 
     const { indicadores, plantillasDisponibles } = await consultar();
     expect(indicadores).toHaveLength(5);
-    expect(plantillasDisponibles).toHaveLength(7);
+    expect(plantillasDisponibles).toHaveLength(13);
     const siniestros = por(indicadores, 'siniestros_viales');
     expect(siniestros.periodos).toHaveLength(12);
     expect(siniestros.periodos[1]).toMatchObject({ id: `${anio}-02`, valor: 1, estado: 'en_riesgo', origen: 'calculado' });

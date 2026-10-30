@@ -49,11 +49,12 @@ import { generarExcel, type ValorExcel } from '../documentos/excel.js';
 import { DocumentoPdf, type CeldaPdf } from '../documentos/pdf.js';
 import { EvidenciasModule, EvidenciasService } from '../evidencias/evidencias.module.js';
 import { fechasDeMeses, sincronizarActividad } from './sincronizar.js';
+import { hoyColombia } from '../common/fechas.js';
 
 type FilaActividad = typeof planActivities.$inferSelect;
 type FilaSeguimiento = typeof planFollowups.$inferSelect;
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = hoyColombia;
 const MENSAJE_FORMACION = 'Esta actividad viene del plan de formación: su fecha y su ejecución se registran allá';
 const nombreDe = <T extends { id: string; nombre: string }>(lista: readonly T[], id: string | null | undefined) => lista.find((x) => x.id === id)?.nombre ?? '—';
 const pesos = (v: number | null | undefined) => (v == null ? '—' : new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(v));

@@ -48,6 +48,32 @@ export interface EstadoDePaso {
   noConformidadesAbiertas: number;
   accionesAbiertas: number;
   accionesVencidas: number;
+  /** Requisitos obligatorios del paso (null si no aplica). */
+  requisitos: ResumenRequisitos | null;
+}
+
+export interface ResumenRequisitos {
+  total: number;
+  cumplen: number;
+  pendientes: number;
+  porcentaje: number | null;
+  completo: boolean;
+}
+
+export interface RequisitoEvaluado {
+  id: string;
+  paso: number;
+  texto: string;
+  cita: string;
+  obligatorio: boolean;
+  verificacion: 'dato' | 'documento' | 'registro';
+  criterio: string | null;
+  ruta: string | null;
+  porValidar: string | null;
+  vigenciaMeses: number | null;
+  estado: 'cumple' | 'no_cumple' | 'sin_verificar' | 'vencido';
+  detalle: string;
+  verificado: { fecha: string; por: string | null; nota: string; evidenciaId: string | null; evidencia: string | null } | null;
 }
 
 export interface Evidencia {

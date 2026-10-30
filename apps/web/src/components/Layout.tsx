@@ -33,6 +33,7 @@ export const SECCIONES: Seccion[] = [
   { ruta: '/documentos', nombre: 'Documentos y política', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/perfil-conductores', nombre: 'Perfil de colaboradores', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/matriz-riesgos', nombre: 'Matriz de riesgos', permiso: 'ver', grupo: 'Gestión' },
+  { ruta: '/programas', nombre: 'Programas de riesgo crítico', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/plan-trabajo', nombre: 'Plan de trabajo', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/capacitacion', nombre: 'Plan de formación', permiso: 'ver', grupo: 'Gestión' },
   { ruta: '/indicadores', nombre: 'Indicadores y metas', permiso: 'ver', grupo: 'Gestión' },

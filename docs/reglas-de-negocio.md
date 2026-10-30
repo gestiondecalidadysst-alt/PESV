@@ -18,7 +18,7 @@ regla ya está implementada.
 
 | Id | Regla | Estado |
 | --- | --- | --- |
-| RN-06 | Un paso queda "Hecho" solo cuando todos sus requisitos tienen evidencia aprobada por el líder PESV. | Implementada como "al menos una evidencia aprobada"; el detalle por requisito llega cuando se cargue el catálogo de requisitos |
+| RN-06 | Un paso queda "Hecho" solo cuando todos sus requisitos tienen evidencia aprobada por el líder PESV. | Implementada (v3.1): requisitos por paso con cita de la norma para los pasos 1 a 23; el 24 se cierra con evidencia aprobada hasta cargar su texto oficial |
 | RN-07 | El porcentaje de cumplimiento se calcula con una regla fija (pasos hechos entre pasos aplicables); nunca lo decide la IA. Igual para ISO 39001. | Implementada (ISO 39001 por cláusula, derivado de los pasos) |
 | RN-08 | Las evidencias tienen fecha y versión; no se borran, se reemplazan. La retención es configurable (paso 19). | Implementada (retención configurable pendiente) |
 | RN-09 | Una misma evidencia puede cubrir requisitos del PESV y de ISO 39001 a la vez. | Implementada |
@@ -98,10 +98,24 @@ regla ya está implementada.
 | RN-65 | El PDF del documento lleva el encabezado del sistema de gestión con su código, versión y fecha, y en el pie quién elaboró, revisó y aprobó, con la fecha de cada firma. Los borradores y las versiones obsoletas se marcan como no controlados. | Implementada |
 | RN-66 | Al aprobar un documento, su PDF (o el archivo adjunto) queda como evidencia aprobada del paso; si el paso no aplica al nivel de la organización, el documento se aprueba sin evidencia. Un documento que ya tuvo versiones aprobadas no se elimina. | Implementada |
 | RN-67 | Las versiones vigentes deben divulgarse (fecha y medio) y revisarse al menos una vez al año; la lista maestra señala las que no cumplen. | Implementada |
-| RN-68 | Un paso solo se marca «Hecho» si sus prerrequisitos (los que aplican al nivel) ya están hechos, si tiene al menos una evidencia aprobada y si no tiene no conformidades abiertas. Los prerrequisitos son datos del catálogo (`PRERREQUISITOS_PASO`). | Implementada |
+| RN-68 | Un paso solo se marca «Hecho» si sus prerrequisitos (los que aplican al nivel) ya están hechos, si cumple sus requisitos obligatorios (RN-06) y si no tiene no conformidades abiertas. Los prerrequisitos son datos del catálogo (`PRERREQUISITOS_PASO`). | Implementada |
 | RN-69 | Los hallazgos de un paso (no conformidad, observación u oportunidad de mejora) se tratan con acciones del plan de acción. Una no conformidad reabre el paso si estaba hecho y se trata con una acción correctiva; el hallazgo se cierra solo cuando tiene acciones, todas cerradas, y se registra la verificación. | Implementada |
 | RN-70 | El plan de acción reúne las acciones de todos los orígenes (hallazgos de pasos, comité, siniestros, auditorías, indicadores, matriz y plan de mejora), cada una con su paso del PESV; mide las vencidas, las por vencer y el porcentaje cerrado a tiempo. | Implementada |
 | RN-71 | Los siguientes pasos recomendados son los que aplican, no están hechos y tienen sus prerrequisitos cerrados, primero los que habilitan más pasos. | Implementada |
+
+## Requisitos de la norma y programas de riesgo crítico (versión 3.1)
+
+| Id | Regla | Estado |
+| --- | --- | --- |
+| RN-72 | Cada requisito del catálogo resume lo que exige el anexo de la Res. 40595 y lleva su cita (paso y literal). Lo que la norma no exige no se marca como obligatorio; lo que falta cotejar con el Diario Oficial se muestra como «por validar». | Implementada |
+| RN-73 | Un requisito se verifica de tres formas: con los datos de la plataforma (regla fija y criterio visible), con un documento controlado del paso aprobado y vigente (y divulgado cuando la norma lo pide), o con la verificación del líder soportada en una evidencia aprobada del paso. | Implementada |
+| RN-74 | Una verificación del líder vence según la periodicidad del requisito (por ejemplo, 12 meses) y se invalida si su evidencia deja de estar aprobada. | Implementada |
+| RN-75 | El paso 8 exige los cinco programas (velocidad segura, fatiga, distracción, cero alcohol y sustancias, actores viales vulnerables): no se pueden eliminar y cada uno debe tener los 14 campos del contenido mínimo y los elementos de la norma confirmados. Sus actividades van al plan de trabajo con origen «programa». | Implementada |
+| RN-76 | Los programas se actualizan y divulgan al menos una vez al año, y sus resultados se revisan cada trimestre (comité, o líder con la dirección en nivel básico). Un trimestre que terminó antes de registrar la organización no es exigible. | Implementada |
+| RN-77 | Los equipos de medición de velocidad deben tener calibración registrada y vigente; un equipo activo asignado a un vehículo lo incluye en la cobertura del programa de velocidad. | Implementada |
+| RN-78 | Las pruebas de alcohol y sustancias son datos sensibles (Ley 1581 de 2012): exigen la autorización del colaborador, solo las ven el administrador y el líder, y el registro de auditoría no guarda el resultado. Un positivo abre una acción correctiva del programa en el paso 8. | Implementada |
+| RN-79 | Los 13 indicadores de la tabla 10 del paso 20 se miden en la plataforma; el requisito exige los que aplican al nivel de la organización. | Implementada |
+| RN-80 | Las fechas de calendario («hoy», vencimientos, divulgaciones) se calculan en la hora de Colombia, no en UTC. | Implementada |
 
 ## Cuentas, suscripción y datos
 

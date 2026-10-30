@@ -14,6 +14,7 @@ import {
   pasosQueDependenDe,
   PRERREQUISITOS_PASO,
   prerrequisitosPendientes,
+  resumenRequisitos,
   RES_40595_2022,
   type CrearOrganizacionInput,
   type EstadoPaso,
@@ -24,6 +25,8 @@ import { auditar, esViolacionUnica } from '../common/audit.js';
 import { suscripcionInicial } from '../suscripciones/reglas.js';
 import { reglasDeCorreoIniciales } from '../correo/notificaciones.js';
 import { DatabaseService, type TenantTx } from '../db/database.service.js';
+import { evaluarRequisitos } from '../requisitos/evaluar.js';
+import { contextoOrganizacion } from '../requisitos/requisitos.module.js';
 import {
   actions,
   classifications,
@@ -209,6 +212,8 @@ export class OrganizationsService {
         .where(eq(actions.status, 'abierta'))
         .groupBy(actions.stepNumber);
       const estados = Object.fromEntries(PASOS_PESV.map((p) => [p.numero, (porNumero.get(p.numero)?.status ?? 'pendiente') as string]));
+      const ctx = await contextoOrganizacion(tx, id);
+      const requisitos = await evaluarRequisitos(tx, { ...ctx, pasos: PASOS_PESV.filter((p) => estados[p.numero] !== 'no_aplica').map((p) => p.numero) });
       return PASOS_PESV.map((p) => {
         const delPaso = conteo.filter((c) => c.ref === String(p.numero));
         const n = (s: string) => delPaso.find((c) => c.status === s)?.total ?? 0;
@@ -229,12 +234,13 @@ export class OrganizationsService {
           noConformidadesAbiertas: h.find((x) => x.tipo === 'no_conformidad')?.total ?? 0,
           accionesAbiertas: a?.total ?? 0,
           accionesVencidas: a?.vencidas ?? 0,
+          requisitos: estados[p.numero] === 'no_aplica' ? null : resumenRequisitos(requisitos.filter((r) => r.paso === p.numero)),
         };
       });
     });
   }
 
-  /** Cambia el estado de un paso. "Hecho" exige al menos una evidencia aprobada (RN-06). */
+  /** Cambia el estado de un paso. "Hecho" exige todos los requisitos obligatorios del paso (RN-06). */
   async actualizarPaso(id: string, numero: number, estado: Exclude<EstadoPaso, 'no_aplica'>, usuarioId: string) {
     return this.database.withTenant(id, async (tx) => {
       const [actual] = await tx
@@ -264,17 +270,27 @@ export class OrganizationsService {
           .from(stepFindings)
           .where(and(eq(stepFindings.stepNumber, numero), eq(stepFindings.status, 'abierto'), eq(stepFindings.kind, 'no_conformidad')));
         if (nc > 0) throw new UnprocessableEntityException('El paso tiene no conformidades abiertas: trátalas en el plan de acción antes de cerrarlo');
-        const [{ total } = { total: 0 }] = await tx
-          .select({ total: count() })
-          .from(evidenceLinks)
-          .innerJoin(evidences, eq(evidences.id, evidenceLinks.evidenceId))
-          .where(
-            and(eq(evidenceLinks.norm, 'PESV'), eq(evidenceLinks.ref, String(numero)), eq(evidences.status, 'aprobada')),
-          );
-        if (total === 0) {
-          throw new UnprocessableEntityException(
-            'Para marcar el paso como hecho necesita al menos una evidencia aprobada',
-          );
+        // RN-06: el paso se cierra cuando cumple todos sus requisitos obligatorios. Si la norma del
+        // paso aún no está cargada como requisitos, basta una evidencia aprobada.
+        const requisitos = (await evaluarRequisitos(tx, { ...(await contextoOrganizacion(tx, id)), pasos: [numero] })).filter((r) => r.obligatorio);
+        if (requisitos.length) {
+          const pendientes = requisitos.filter((r) => r.estado !== 'cumple');
+          if (pendientes.length) {
+            throw new UnprocessableEntityException(`El paso tiene requisitos sin cumplir: ${pendientes.map((r) => r.id).join(', ')}. Revisa cada uno en la página del paso.`);
+          }
+        } else {
+          const [{ total } = { total: 0 }] = await tx
+            .select({ total: count() })
+            .from(evidenceLinks)
+            .innerJoin(evidences, eq(evidences.id, evidenceLinks.evidenceId))
+            .where(
+              and(eq(evidenceLinks.norm, 'PESV'), eq(evidenceLinks.ref, String(numero)), eq(evidences.status, 'aprobada')),
+            );
+          if (total === 0) {
+            throw new UnprocessableEntityException(
+              'Para marcar el paso como hecho necesita al menos una evidencia aprobada',
+            );
+          }
         }
       }
       await tx

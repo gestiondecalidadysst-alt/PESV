@@ -1,10 +1,11 @@
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import ExcelJS from 'exceljs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { binario, crearApp, hayBaseDeDatos, limpiar, registrar, textoPdf, type Cuenta } from './helpers.js';
+import { binario, crearApp, cumplirPaso1, cumplirPaso2, hayBaseDeDatos, limpiar, registrar, textoPdf, type Cuenta } from './helpers.js';
 
-const hoy = () => new Date().toISOString().slice(0, 10);
-const enDias = (d: number) => new Date(Date.now() + d * 86_400_000).toISOString().slice(0, 10);
+// Fechas de calendario en Colombia (UTC−5), como las calcula la API.
+const enDias = (d: number) => new Date(Date.now() - 5 * 3600_000 + d * 86_400_000).toISOString().slice(0, 10);
+const hoy = () => enDias(0);
 
 describe.skipIf(!hayBaseDeDatos)('V2 · pasos conectados y plan de acción', () => {
   let app: NestExpressApplication;
@@ -12,11 +13,6 @@ describe.skipIf(!hayBaseDeDatos)('V2 · pasos conectados y plan de acción', () 
   const h = () => ({ 'x-organization-id': c.orgId });
   let hallazgo = '';
   let accion = '';
-
-  const evidenciaAprobada = async (paso: number) => {
-    const e = await c.agente.post('/api/org/evidencias').set(h()).field('titulo', `Evidencia del paso ${paso}`).field('pasoNumero', String(paso)).attach('archivo', Buffer.from('%PDF-1.4 x'), { filename: 'e.pdf', contentType: 'application/pdf' }).expect(201);
-    await c.agente.post(`/api/org/evidencias/${e.body.id}/decision`).set(h()).send({ decision: 'aprobar' }).expect(201);
-  };
 
   beforeAll(async () => {
     app = await crearApp();
@@ -29,7 +25,7 @@ describe.skipIf(!hayBaseDeDatos)('V2 · pasos conectados y plan de acción', () 
   });
 
   it('no deja cerrar un paso sin sus prerrequisitos', async () => {
-    await evidenciaAprobada(2);
+    await cumplirPaso2(c);
     const r = await c.agente.patch('/api/org/pasos/2').set(h()).send({ estado: 'hecho' }).expect(422);
     expect(r.body.message).toMatch(/deben estar hechos: 1\. /);
     const pasos = await c.agente.get('/api/org/pasos').set(h()).expect(200);
@@ -37,7 +33,7 @@ describe.skipIf(!hayBaseDeDatos)('V2 · pasos conectados y plan de acción', () 
     expect(dos).toMatchObject({ prerrequisitos: [{ numero: 1, estado: 'pendiente' }], prerrequisitosPendientes: [1] });
     expect(pasos.body.find((p: { numero: number }) => p.numero === 1).habilita).toEqual(expect.arrayContaining([2, 3, 5]));
 
-    await evidenciaAprobada(1);
+    await cumplirPaso1(c);
     await c.agente.patch('/api/org/pasos/1').set(h()).send({ estado: 'hecho' }).expect(200);
     await c.agente.patch('/api/org/pasos/2').set(h()).send({ estado: 'hecho' }).expect(200);
   });

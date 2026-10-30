@@ -50,12 +50,13 @@ import { DocumentoPdf, type CeldaPdf } from '../documentos/pdf.js';
 import { EvidenciasModule, EvidenciasService } from '../evidencias/evidencias.module.js';
 import { ejecutarMesesPendientes, fechasDeMeses, revertirMedidaImplementada, sincronizarActividad } from '../plan-trabajo/sincronizar.js';
 import { evaluacionInherente, evaluacionResidual } from './evaluacion.js';
+import { hoyColombia } from '../common/fechas.js';
 
 type FilaRiesgo = typeof roadRisks.$inferSelect;
 type FilaMedida = typeof riskMeasures.$inferSelect;
 
 const nombre = <T extends { id: string; nombre: string }>(lista: readonly T[], id: string | null) => lista.find((x) => x.id === id)?.nombre ?? id ?? '—';
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = hoyColombia;
 
 const aMedida = (m: FilaMedida) => ({
   id: m.id,

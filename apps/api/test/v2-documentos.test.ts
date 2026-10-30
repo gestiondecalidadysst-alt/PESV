@@ -75,7 +75,7 @@ describe.skipIf(!hayBaseDeDatos)('V2 · documentos controlados', () => {
 
   it('registra la divulgación y una nueva versión deja la anterior obsoleta', async () => {
     await c.agente.post(`/api/org/documentos/${politica}/divulgacion`).set(h()).send({ fecha: '2020-01-01', medio: 'Correo' }).expect(400);
-    await c.agente.post(`/api/org/documentos/${politica}/divulgacion`).set(h()).send({ fecha: new Date().toISOString().slice(0, 10), medio: 'Correo a todos y cartelera' }).expect(201);
+    await c.agente.post(`/api/org/documentos/${politica}/divulgacion`).set(h()).send({ fecha: new Date(Date.now() - 5 * 3600_000).toISOString().slice(0, 10), medio: 'Correo a todos y cartelera' }).expect(201);
     await c.agente.post(`/api/org/documentos/${politica}/nueva-version`).set(h()).expect(201);
     await c.agente.post(`/api/org/documentos/${politica}/nueva-version`).set(h()).expect(400);
     // La versión 2 necesita la descripción del cambio.

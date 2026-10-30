@@ -488,7 +488,7 @@ export const roadRisks = pgTable('road_risks', {
   legalReference: text('legal_reference'),
   ownerName: text('owner_name'),
   status: text('status').notNull().default('abierto'),
-  identifiedOn: date('identified_on').notNull().$defaultFn(() => new Date().toISOString().slice(0, 10)),
+  identifiedOn: date('identified_on').notNull().$defaultFn(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' })),
   createdAt: creado(),
   updatedAt: actualizado(),
 });
@@ -962,5 +962,97 @@ export const stepFindings = pgTable('step_findings', {
   closedAt: timestamp('closed_at', { withTimezone: true }),
   closedBy: uuid('closed_by'),
   createdBy: uuid('created_by'),
+  createdAt: creado(),
+});
+
+// Versión 3.1: requisitos por paso y programas del paso 8 --------------------------
+
+export const stepRequirementChecks = pgTable(
+  'step_requirement_checks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: org(),
+    requirementId: text('requirement_id').notNull(),
+    stepNumber: smallint('step_number').notNull(),
+    status: text('status').notNull(),
+    note: text('note').notNull(),
+    evidenceId: uuid('evidence_id'),
+    checkedBy: uuid('checked_by'),
+    checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [unique().on(t.organizationId, t.requirementId)],
+);
+
+export const criticalPrograms = pgTable('critical_programs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  kind: text('kind').notNull(),
+  name: text('name').notNull(),
+  guidelines: text('guidelines'),
+  scope: text('scope'),
+  startOn: date('start_on'),
+  durationMonths: smallint('duration_months'),
+  baseline: text('baseline'),
+  objectives: text('objectives'),
+  performanceFactors: text('performance_factors'),
+  responsibleName: text('responsible_name'),
+  budget: numeric('budget', { mode: 'number' }),
+  followUp: text('follow_up'),
+  elements: text('elements').array().notNull().default([]),
+  indicatorIds: uuid('indicator_ids').array().notNull().default([]),
+  riskIds: uuid('risk_ids').array().notNull().default([]),
+  reviewedOn: date('reviewed_on'),
+  disseminatedOn: date('disseminated_on'),
+  disseminationNote: text('dissemination_note'),
+  active: boolean('active').notNull().default(true),
+  createdBy: uuid('created_by'),
+  createdAt: creado(),
+  updatedAt: actualizado(),
+});
+
+export const programReviews = pgTable(
+  'program_reviews',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: org(),
+    period: text('period').notNull(),
+    reviewedOn: date('reviewed_on').notNull(),
+    instance: text('instance').notNull(),
+    meetingId: uuid('meeting_id'),
+    participants: text('participants').notNull(),
+    conclusions: text('conclusions').notNull(),
+    createdBy: uuid('created_by'),
+    createdAt: creado(),
+  },
+  (t) => [unique().on(t.organizationId, t.period)],
+);
+
+export const speedDevices = pgTable('speed_devices', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  kind: text('kind').notNull(),
+  name: text('name').notNull(),
+  serial: text('serial'),
+  vehicleId: uuid('vehicle_id'),
+  calibratedOn: date('calibrated_on'),
+  calibrationExpiresOn: date('calibration_expires_on'),
+  notes: text('notes'),
+  active: boolean('active').notNull().default(true),
+  createdAt: creado(),
+  updatedAt: actualizado(),
+});
+
+export const substanceTests = pgTable('substance_tests', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  organizationId: org(),
+  driverId: uuid('driver_id').notNull(),
+  kind: text('kind').notNull(),
+  method: text('method'),
+  performedOn: date('performed_on').notNull(),
+  result: text('result').notNull(),
+  consent: boolean('consent').notNull(),
+  actionId: uuid('action_id'),
+  notes: text('notes'),
+  recordedBy: uuid('recorded_by'),
   createdAt: creado(),
 });

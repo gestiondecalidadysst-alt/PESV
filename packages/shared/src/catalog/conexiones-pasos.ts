@@ -68,7 +68,10 @@ export const HERRAMIENTAS_PASO: Readonly<Record<number, readonly HerramientaPaso
   ],
   6: [{ ruta: '/matriz-riesgos', nombre: 'Matriz de riesgos', descripcion: 'Identificación de peligros, evaluación y controles.' }],
   7: [{ ruta: '/indicadores', nombre: 'Objetivos, metas e indicadores', descripcion: 'Metas con su indicador y seguimiento.' }],
-  8: [{ ruta: '/plan-trabajo', nombre: 'Plan de trabajo', descripcion: 'Programas de gestión para los riesgos críticos.' }],
+  8: [
+    { ruta: '/programas', nombre: 'Programas de riesgo crítico', descripcion: 'Los cinco programas obligatorios, equipos de velocidad, pruebas de alcohol y sustancias y revisión trimestral.' },
+    { ruta: '/plan-trabajo', nombre: 'Plan de trabajo', descripcion: 'Actividades y cronograma de cada programa.' },
+  ],
   9: [{ ruta: '/plan-trabajo', nombre: 'Plan de trabajo', descripcion: 'Actividades, cronograma y ejecución del año.' }],
   10: [{ ruta: '/capacitacion', nombre: 'Plan de capacitación', descripcion: 'Programa anual, asistencia y eficacia.' }],
   11: [{ ruta: '/capacitacion', nombre: 'Plan de capacitación', descripcion: 'Formación en comportamiento seguro.' }],
@@ -86,6 +89,6 @@ export const HERRAMIENTAS_PASO: Readonly<Record<number, readonly HerramientaPaso
   ],
   21: [{ ruta: '/siniestros', nombre: 'Siniestros', descripcion: 'Estadística de siniestralidad.' }],
   22: [{ ruta: '/auditorias', nombre: 'Auditorías', descripcion: 'Auditoría anual y preauditoría con IA.' }],
-  23: [{ ruta: '/plan-accion', nombre: 'Plan de acción', descripcion: 'Acciones correctivas, preventivas y de mejora.' }],
+  23: [{ ruta: '/acciones', nombre: 'Plan de acción', descripcion: 'Acciones correctivas, preventivas y de mejora.' }],
   24: [{ ruta: '/documentos', nombre: 'Documentos', descripcion: 'Mecanismos de comunicación y participación.' }],
 };

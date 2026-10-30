@@ -1,4 +1,4 @@
-import { evaluarRiesgo, indicadoresFormacion, type CalculoIndicador, type MetodologiaRiesgo, type PeriodoIndicador } from '@pesv/shared';
+import { evaluarRiesgo, indicadoresFormacion, valorIndicador, type CalculoIndicador, type MetodologiaRiesgo, type PeriodoIndicador, type UnidadIndicador } from '@pesv/shared';
 import { sql } from 'drizzle-orm';
 import type { TenantTx } from '../db/database.service.js';
 
@@ -135,6 +135,69 @@ export async function medir(tx: TenantTx, calculo: CalculoIndicador, p: PeriodoI
               from actions where due_on between ${desde} and ${hasta} and due_on <= ${hoy}`,
       );
       return { numerador: entero(r?.a_tiempo), denominador: entero(r?.total), detalle: `${entero(r?.a_tiempo)} de ${entero(r?.total)} acciones cerradas a tiempo` };
+    }
+    case 'costos_siniestros': {
+      const [r] = await filas<{ siniestros: number; costo: number }>(
+        tx,
+        sql`select count(*)::int as siniestros, coalesce(sum(direct_cost + indirect_cost), 0)::float as costo
+              from crashes where ${dia('occurred_at')} between ${desde} and ${hasta}`,
+      );
+      const costo = Math.round(Number(r?.costo ?? 0));
+      return { numerador: costo, denominador: null, detalle: `$ ${new Intl.NumberFormat('es-CO').format(costo)} en ${plural(entero(r?.siniestros), 'siniestro', 'siniestros')}` };
+    }
+    case 'excesos_jornada':
+    case 'excesos_velocidad': {
+      const [r] = await filas<{ viajes: number; jornada: number; velocidad: number }>(
+        tx,
+        sql`select count(*)::int as viajes, count(*) filter (where over_shift)::int as jornada, count(*) filter (where speeding)::int as velocidad
+              from trips where status <> 'cancelado' and ${dia('departure_at')} between ${desde} and ${hasta}`,
+      );
+      const excesos = entero(calculo === 'excesos_jornada' ? r?.jornada : r?.velocidad);
+      return { numerador: excesos, denominador: entero(r?.viajes), detalle: `${excesos} de ${plural(entero(r?.viajes), 'desplazamiento', 'desplazamientos')} con exceso de ${calculo === 'excesos_jornada' ? 'jornada' : 'velocidad'}` };
+    }
+    case 'cobertura_programa_velocidad': {
+      const [r] = await filas<{ activos: number; cubiertos: number }>(
+        tx,
+        sql`select count(*)::int as activos,
+                   count(*) filter (where exists (
+                     select 1 from speed_devices d where d.vehicle_id = v.id and d.active and ${dia('d.created_at')} <= ${hasta}
+                        and (d.calibration_expires_on is null or d.calibration_expires_on >= ${hasta})))::int as cubiertos
+              from vehicles v where v.status <> 'inactivo' and v.motorized`,
+      );
+      return { numerador: entero(r?.cubiertos), denominador: entero(r?.activos), detalle: `${entero(r?.cubiertos)} de ${entero(r?.activos)} vehículos con equipo de control de velocidad` };
+    }
+    case 'nc_auditoria_cerradas': {
+      const [r] = await filas<{ total: number; cerradas: number }>(
+        tx,
+        sql`select count(*)::int as total, count(*) filter (where status = 'cerrado' and ${dia('closed_at')} <= ${hasta})::int as cerradas
+              from audit_findings
+             where kind in ('no_conformidad_mayor', 'no_conformidad_menor') and ${dia('created_at')} between ${desde} and ${hasta}`,
+      );
+      return { numerador: entero(r?.cerradas), denominador: entero(r?.total), detalle: `${entero(r?.cerradas)} de ${plural(entero(r?.total), 'no conformidad', 'no conformidades')} cerradas` };
+    }
+    case 'cumplimiento_metas': {
+      const metas = await filas<{ target: number; direction: 'mayor_o_igual' | 'menor_o_igual'; current_value: number | null; calculation: CalculoIndicador | null; unit: UnidadIndicador | null; registrado: number | null }>(
+        tx,
+        sql`select g.target::float, g.direction, g.current_value::float, i.calculation, i.unit,
+                   (select r.value::float from indicator_results r
+                     where r.indicator_id = i.id and r.value is not null and r.period like ${`${anio}%`}
+                     order by r.period desc limit 1) as registrado
+              from goals g left join indicators i on i.id = g.indicator_id
+             where g.year = ${anio}`,
+      );
+      let medidas = 0;
+      let cumplen = 0;
+      for (const m of metas) {
+        let valor: number | null = m.registrado ?? (m.calculation ? null : m.current_value);
+        if (valor == null && m.calculation && m.calculation !== 'cumplimiento_metas' && m.unit) {
+          const anual = await medir(tx, m.calculation, { id: `${anio}`, etiqueta: String(anio), desde: `${anio}-01-01`, hasta }, hoy);
+          valor = anual ? valorIndicador(m.unit, anual.numerador, anual.denominador) : null;
+        }
+        if (valor == null) continue;
+        medidas += 1;
+        if (m.direction === 'mayor_o_igual' ? valor >= m.target : valor <= m.target) cumplen += 1;
+      }
+      return { numerador: cumplen, denominador: medidas, detalle: `${cumplen} de ${plural(medidas, 'meta medida', 'metas medidas')} cumplen (${metas.length} en el año)` };
     }
   }
 }

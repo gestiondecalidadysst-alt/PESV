@@ -44,10 +44,11 @@ import { enviarArchivo, FormatoService, MIME_PDF, MIME_XLSX } from '../documento
 import { generarExcel, type ValorExcel } from '../documentos/excel.js';
 import { DocumentoPdf } from '../documentos/pdf.js';
 import { EvidenciasModule, EvidenciasService } from '../evidencias/evidencias.module.js';
+import { hoyColombia } from '../common/fechas.js';
 
 type FilaCampana = typeof surveyCampaigns.$inferSelect;
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = hoyColombia;
 const limiteEnvio = new Limitador(20, 15 * 60_000);
 
 interface CampanaPublica {

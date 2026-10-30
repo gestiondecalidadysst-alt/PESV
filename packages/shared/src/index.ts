@@ -25,3 +25,6 @@ export * from './catalog/indicadores';
 export * from './catalog/perfil-conductores';
 export * from './catalog/plantillas-documentos';
 export * from './catalog/plan-accion';
+export * from './catalog/programas';
+export * from './catalog/requisitos-40595';
+export * from './schemas-v3';

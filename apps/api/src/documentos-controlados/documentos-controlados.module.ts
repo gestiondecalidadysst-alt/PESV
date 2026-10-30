@@ -53,11 +53,12 @@ import { generarExcel, type ValorExcel } from '../documentos/excel.js';
 import { DocumentoPdf, type CeldaPdf } from '../documentos/pdf.js';
 import { EvidenciasModule, EvidenciasService, TIPOS_PERMITIDOS } from '../evidencias/evidencias.module.js';
 import { nombreSeguro, StorageService } from '../storage/storage.service.js';
+import { hoyColombia } from '../common/fechas.js';
 
 type FilaDocumento = typeof controlledDocuments.$inferSelect;
 type FilaVersion = typeof documentVersions.$inferSelect;
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = hoyColombia;
 const nombreDe = <T extends { id: string; nombre: string }>(lista: readonly T[], id: string | null | undefined) => lista.find((x) => x.id === id)?.nombre ?? id ?? '—';
 const EN_CURSO = ['borrador', 'en_revision'];
 const ESTADO_TEXTO: Record<string, string> = { borrador: 'Borrador', en_revision: 'En revisión', aprobado: 'Vigente', obsoleto: 'Obsoleta' };

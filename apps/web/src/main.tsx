@@ -38,6 +38,7 @@ const DocumentoDetalle = cargar(() => import('./pages/Documentos'), 'DocumentoDe
 const MatrizRiesgos = cargar(() => import('./pages/MatrizRiesgos'), 'MatrizRiesgos');
 const PlanTrabajo = cargar(() => import('./pages/PlanTrabajo'), 'PlanTrabajo');
 const Capacitacion = cargar(() => import('./pages/Capacitacion'), 'Capacitacion');
+const Programas = cargar(() => import('./pages/Programas'), 'Programas');
 const Desplazamientos = cargar(() => import('./pages/Desplazamientos'), 'Desplazamientos');
 const Acciones = cargar(() => import('./pages/Acciones'), 'Acciones');
 const Vigia = cargar(() => import('./pages/Vigia'), 'Vigia');
@@ -114,6 +115,7 @@ const router = createBrowserRouter([
           { path: 'matriz-riesgos', element: conCarga(<MatrizRiesgos />) },
           { path: 'plan-trabajo', element: conCarga(<PlanTrabajo />) },
           { path: 'capacitacion', element: conCarga(<Capacitacion />) },
+          { path: 'programas', element: conCarga(<Programas />) },
           { path: 'indicadores', element: conCarga(<Indicadores />) },
           { path: 'perfil-conductores', element: conCarga(<PerfilConductores />) },
           { path: 'documentos', element: conCarga(<Documentos />) },

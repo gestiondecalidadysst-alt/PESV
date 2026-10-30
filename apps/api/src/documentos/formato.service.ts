@@ -5,6 +5,7 @@ import { auditar } from '../common/audit.js';
 import { DatabaseService } from '../db/database.service.js';
 import { documentFormats, documentSettings, organizations } from '../db/schema.js';
 import { StorageService } from '../storage/storage.service.js';
+import { hoyColombia } from '../common/fechas.js';
 
 export interface Firmante {
   nombre: string | null;
@@ -36,7 +37,7 @@ export function tipoDeImagen(datos: Buffer): 'image/png' | 'image/jpeg' | null {
 }
 
 const firmante = (nombre: string | null | undefined, cargo: string | null | undefined): Firmante => ({ nombre: nombre ?? null, cargo: cargo ?? null });
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = hoyColombia;
 
 /**
  * Identidad documental de la organización: logo y formato del sistema de gestión (prefijo de

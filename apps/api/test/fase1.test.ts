@@ -6,6 +6,7 @@ import { EventosService } from '../src/eventos/eventos.service.js';
 import {
   consultarComoAdmin,
   crearApp,
+  documentoAprobado,
   hayBaseDeDatos,
   limpiar,
   registrar,
@@ -15,7 +16,8 @@ import {
   type ServidorDePrueba,
 } from './helpers.js';
 
-const hoyMas = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString().slice(0, 10);
+// Fechas de calendario en Colombia (UTC−5), como las calcula la API.
+const hoyMas = (dias: number) => new Date(Date.now() - 5 * 3600_000 + dias * 86_400_000).toISOString().slice(0, 10);
 
 describe.skipIf(!hayBaseDeDatos)('Fase 1', () => {
   let app: NestExpressApplication;
@@ -143,11 +145,32 @@ describe.skipIf(!hayBaseDeDatos)('Fase 1', () => {
       expect(pasos.body[0]).toMatchObject({ estado: 'en_curso', evidencias: { enRevision: 1 } });
     });
 
-    it('solo deja marcar el paso como hecho con evidencia aprobada', async () => {
-      await lider.agente.patch('/api/org/pasos/1').set(org()).send({ estado: 'hecho' }).expect(422);
+    it('solo cierra el paso cuando cumple todos sus requisitos (RN-06)', async () => {
+      const sin = await lider.agente.patch('/api/org/pasos/1').set(org()).send({ estado: 'hecho' }).expect(422);
+      expect(sin.body.message).toMatch(/P1\.1, P1\.2/);
+      const verificar = (body: Record<string, unknown>) => lider.agente.post('/api/org/pasos/1/requisitos/P1.2').set(org()).send(body);
+      // Un requisito de registro se soporta con una evidencia aprobada del paso.
+      await verificar({ estado: 'cumple', nota: 'Competencia revisada' }).expect(400);
+      await verificar({ estado: 'cumple', nota: 'Competencia revisada', evidenciaId }).expect(400);
       await lider.agente.post(`/api/org/evidencias/${evidenciaId}/decision`).set(org()).send({ decision: 'rechazar' }).expect(400);
       await lider.agente.post(`/api/org/evidencias/${evidenciaId}/decision`).set(org()).send({ decision: 'aprobar' }).expect(201);
+      await verificar({ estado: 'cumple', nota: 'Competencia revisada', evidenciaId }).expect(201);
+      await lider.agente.post('/api/org/pasos/1/requisitos/P1.1').set(org()).send({ estado: 'cumple', nota: 'x', evidenciaId }).expect(400);
+      let req = await lider.agente.get('/api/org/pasos/1/requisitos').set(org()).expect(200);
+      expect(req.body.requisitos.map((r: { id: string; estado: string }) => [r.id, r.estado])).toEqual([['P1.1', 'no_cumple'], ['P1.2', 'cumple']]);
+      expect(req.body.evidenciasAprobadas).toHaveLength(1);
+      await lider.agente.patch('/api/org/pasos/1').set(org()).send({ estado: 'hecho' }).expect(422);
+      // El acta de designación aprobada como documento controlado del paso 1 completa el paso.
+      await documentoAprobado(lider, 1, 'acta', 'Acta de designación del líder del PESV');
+      req = await lider.agente.get('/api/org/pasos/1/requisitos').set(org()).expect(200);
+      expect(req.body.resumen).toMatchObject({ total: 2, cumplen: 2, completo: true });
+      expect(req.body.requisitos[0].detalle).toMatch(/PESV-AC-01/);
       await lider.agente.patch('/api/org/pasos/1').set(org()).send({ estado: 'hecho' }).expect(200);
+      const pasos = await lider.agente.get('/api/org/pasos').set(org()).expect(200);
+      expect(pasos.body[0].requisitos).toMatchObject({ total: 2, cumplen: 2 });
+      // El paso 24 aún no tiene requisitos cargados: se mantiene la regla de evidencia aprobada.
+      const p24 = await lider.agente.get('/api/org/pasos/24/requisitos').set(org()).expect(200);
+      expect(p24.body.requisitos).toEqual([]);
       const detalle = await lider.agente.get('/api/org').set(org()).expect(200);
       expect(detalle.body.resumen).toMatchObject({ hechos: 1, aplicables: 18, porcentajeCumplimiento: 6 });
     });

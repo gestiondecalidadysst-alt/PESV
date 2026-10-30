@@ -24,6 +24,7 @@ import { IaModule } from '../ia/ia.module.js';
 import { IaService } from '../ia/ia.service.js';
 import { OrganizationsModule } from '../organizations/organizations.module.js';
 import { OrganizationsService } from '../organizations/organizations.service.js';
+import { hoyColombia } from '../common/fechas.js';
 
 type FilaAuditoria = typeof audits.$inferSelect;
 type FilaHallazgo = typeof auditFindings.$inferSelect;
@@ -57,7 +58,7 @@ const aHallazgo = (h: FilaHallazgo) => ({
   cerradoEn: h.closedAt,
 });
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = hoyColombia;
 
 /**
  * Auditorías del PESV (paso 22) y mejora continua (paso 23). Cada no conformidad necesita

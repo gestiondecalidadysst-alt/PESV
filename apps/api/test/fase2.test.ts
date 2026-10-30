@@ -4,7 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TareasService } from '../src/tareas/tareas.module.js';
 import { consultarComoAdmin, crearApp, hayBaseDeDatos, limpiar, registrar, unico, type Cuenta } from './helpers.js';
 
-const hoyMas = (dias: number) => new Date(Date.now() + dias * 86_400_000).toISOString().slice(0, 10);
+// Fechas de calendario en Colombia (UTC−5), como las calcula la API.
+const hoyMas = (dias: number) => new Date(Date.now() - 5 * 3600_000 + dias * 86_400_000).toISOString().slice(0, 10);
 const ahora = new Date();
 const trimestre = `${ahora.getFullYear()}-T${Math.ceil((ahora.getMonth() + 1) / 3)}`;
 const mes = ahora.toISOString().slice(0, 7);

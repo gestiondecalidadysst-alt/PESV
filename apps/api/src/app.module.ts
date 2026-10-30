@@ -16,6 +16,8 @@ import { TareasModule } from './tareas/tareas.module.js';
 import { VigiaModule } from './vigia/vigia.module.js';
 import { CorreoModule } from './correo/correo.module.js';
 import { DocumentosModule } from './documentos/documentos.module.js';
+import { ProgramasModule } from './programas/programas.module.js';
+import { RequisitosModule } from './requisitos/requisitos.module.js';
 import { ErroresModule } from './errores/errores.module.js';
 import { CatalogController } from './catalog/catalog.controller.js';
 import { ClassificationController } from './classification/classification.controller.js';
@@ -60,6 +62,8 @@ import { TelematicaModule } from './telematica/telematica.module.js';
     MatrizModule,
     PlanTrabajoModule,
     CapacitacionModule,
+    ProgramasModule,
+    RequisitosModule,
     DesplazamientosModule,
     VigiaModule,
     TareasModule,

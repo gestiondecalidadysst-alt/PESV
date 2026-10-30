@@ -45,11 +45,12 @@ import { generarExcel, type ValorExcel } from '../documentos/excel.js';
 import { DocumentoPdf, type CeldaPdf } from '../documentos/pdf.js';
 import { EvidenciasModule, EvidenciasService } from '../evidencias/evidencias.module.js';
 import { fechasDeMeses, sincronizarActividad } from '../plan-trabajo/sincronizar.js';
+import { hoyColombia } from '../common/fechas.js';
 
 type FilaCapacitacion = typeof trainings.$inferSelect;
 type FilaAsistencia = typeof trainingAttendance.$inferSelect;
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = hoyColombia;
 const nombreDe = <T extends { id: string; nombre: string }>(lista: readonly T[], id: string | null | undefined) => lista.find((x) => x.id === id)?.nombre ?? id ?? '—';
 const mesDe = (fecha: string) => Number(fecha.slice(5, 7));
 const NOTA_PLAN = 'Capacitación ejecutada (registrado desde el plan de formación)';

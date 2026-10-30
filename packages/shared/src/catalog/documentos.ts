@@ -10,6 +10,7 @@ export const TIPOS_DOCUMENTO = [
   { id: 'lista_asistencia', nombre: 'Registro de asistencia a formación', paso: 10, codigo: 'FR-01' },
   { id: 'indicadores', nombre: 'Fichas técnicas y medición de indicadores del PESV', paso: 20, codigo: 'FT-01' },
   { id: 'metas', nombre: 'Objetivos y metas del PESV', paso: 7, codigo: 'PL-03' },
+  { id: 'programas_riesgo', nombre: 'Programas de gestión de riesgos críticos y factores de desempeño', paso: 8, codigo: 'PG-01' },
   { id: 'perfil_conductores', nombre: 'Caracterización sociodemográfica de los colaboradores', paso: 5, codigo: 'IN-01' },
   { id: 'acta_comite', nombre: 'Acta de reunión del comité de seguridad vial', paso: 2, codigo: 'FR-02' },
   { id: 'plan_accion', nombre: 'Plan de acción y mejora continua', paso: 23, codigo: 'PL-04' },

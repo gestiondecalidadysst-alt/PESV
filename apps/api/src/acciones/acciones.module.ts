@@ -38,11 +38,12 @@ import { enviarArchivo, FormatoService, MIME_PDF, MIME_XLSX } from '../documento
 import { generarExcel, type ValorExcel } from '../documentos/excel.js';
 import { DocumentoPdf, type CeldaPdf } from '../documentos/pdf.js';
 import { EvidenciasModule, EvidenciasService } from '../evidencias/evidencias.module.js';
+import { hoyColombia } from '../common/fechas.js';
 
 type FilaAccion = typeof actions.$inferSelect;
 type FilaHallazgo = typeof stepFindings.$inferSelect;
 
-const hoy = () => new Date().toISOString().slice(0, 10);
+const hoy = hoyColombia;
 const nombreDe = <T extends { id: string; nombre: string }>(lista: readonly T[], id: string | null | undefined) => lista.find((x) => x.id === id)?.nombre ?? id ?? '—';
 
 /** Paso del PESV que corresponde a una acción según su origen (si no se indicó). */

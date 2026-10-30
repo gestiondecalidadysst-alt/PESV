@@ -12,6 +12,7 @@ export const ORIGENES_ACCION = [
   { id: 'indicador', nombre: 'Indicador', ruta: '/indicadores', paso: 20 },
   { id: 'riesgo', nombre: 'Matriz de riesgos', ruta: '/matriz-riesgos', paso: 6 },
   { id: 'capacitacion', nombre: 'Formación', ruta: '/capacitacion', paso: 10 },
+  { id: 'programa', nombre: 'Programa de riesgo crítico', ruta: '/programas', paso: 8 },
   { id: 'paso', nombre: 'Hallazgo de un paso', ruta: '/pasos', paso: null },
   { id: 'manual', nombre: 'Plan de mejora', ruta: '/acciones', paso: 23 },
 ] as const;

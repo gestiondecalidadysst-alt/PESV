@@ -25,6 +25,8 @@ export const PERMISOS = [
   'configurar',
   /** Enviar viajes desde la plataforma GPS; se da a tokens de API con alcance «telematica». */
   'telematica',
+  /** Datos sensibles de salud (pruebas de alcohol y sustancias, Ley 1581 de 2012). */
+  'datos_sensibles',
 ] as const;
 export type Permiso = (typeof PERMISOS)[number];
 
@@ -33,7 +35,7 @@ const TODOS: readonly Permiso[] = PERMISOS;
 export const PERMISOS_POR_ROL: Record<Rol, readonly Permiso[]> = {
   admin: TODOS,
   lider_pesv: TODOS.filter((p) => p !== 'configurar'),
-  consultor: TODOS.filter((p) => p !== 'configurar' && p !== 'gestionar_miembros'),
+  consultor: TODOS.filter((p) => p !== 'configurar' && p !== 'gestionar_miembros' && p !== 'datos_sensibles'),
   comite: ['ver', 'comite', 'gestionar_siniestros'],
   mantenimiento: ['ver', 'gestionar_flota', 'gestionar_mantenimiento', 'inspeccionar'],
   conductor: ['inspeccionar'],
